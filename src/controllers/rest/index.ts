@@ -3,4 +3,5 @@
  */
 
 export * from "./AssetController";
+export * from "./AssetService";
 export * from "./HelloWorldController";
