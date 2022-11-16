@@ -11,11 +11,22 @@ datasource db {
 }
 
 generator tsed {
-  provider = "tsed-prisma"
+    provider = "tsed-prisma"
 }
 
-model User {
-  id    Int     @default(autoincrement()) @id
-  email String  @unique
-  name  String?
+model Asset {
+    id          String  @id @default(uuid())
+    urlPath     String  @unique
+    type        String
+    meta        AssetMeta?
+}
+
+model AssetMeta {
+    id                  String  @id @default(uuid())
+    created             DateTime @default(now())
+    originalFilename    String
+    fileSize             Int
+    referenceUrl        String
+    asset               Asset?  @relation(fields: [assetId], references: [id])
+    assetId             String  @unique
 }
