@@ -38,7 +38,7 @@ RUN npm install -g pm2
 COPY --from=build /opt .
 
 RUN yarn install --pure-lockfile --production
-
+COPY ./prisma ./prisma
 COPY processes.config.js .
 
 EXPOSE 8081

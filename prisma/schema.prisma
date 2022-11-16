@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator tsed {
+    provider = "tsed-prisma"
+}
+
+model Asset {
+    id          String  @id @default(uuid())
+    urlPath     String  @unique
+    type        String
+    meta        AssetMeta?
+}
+
+model AssetMeta {
+    id                  String  @id @default(uuid())
+    created             DateTime @default(now())
+    originalFilename    String
+    fileSize             Int
+    referenceUrl        String
+    asset               Asset?  @relation(fields: [assetId], references: [id])
+    assetId             String  @unique
+}
