@@ -30,8 +30,9 @@ export async function findAssetById(id : string) : Promise<any> {
 export async function findAllAssets(page : number, pageSize : number) : Promise<any> {
     return await prisma.asset.findMany({
         skip: pageSize*page,
-        take: pageSize
-    })
+        take: pageSize,
+        include: includeAll
+    });
 }
 
 export async function uploadAsset(file : PlatformMulterFile) : Promise<Object> {
