@@ -1,15 +1,24 @@
 import {Controller} from "@tsed/di";
 import {Get, Post} from "@tsed/schema";
-import {MultipartFile, PlatformMulterFile, QueryParams, ValidationError} from "@tsed/common";
+import {MultipartFile, PathParams, PlatformMulterFile, QueryParams, ValidationError} from "@tsed/common";
 
 import * as AssetService from './AssetService'
 
 @Controller("/asset")
 export class AssetController {
-    @Get("/")
-    findAll() {
 
+    @Get("/")
+    findAll(@QueryParams("page") page : number,
+            @QueryParams("pageSize") pageSize : number) : Promise<Object> {
+        return AssetService.findAllAssets(page, pageSize);
     }
+
+    @Get("/:id")
+    findByd(@PathParams("id") id : string) : Promise <Object>
+    {
+        return AssetService.findAssetById(id);
+    }
+
     @Post("/")
     uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
                 @QueryParams("systemRefId") systemRefId : string,

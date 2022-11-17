@@ -12,21 +12,48 @@ datasource db {
 
 generator tsed {
     provider = "tsed-prisma"
+    output   = "../prisma/generated/tsed"
 }
 
 model Asset {
     id          String  @id @default(uuid())
     urlPath     String  @unique
     type        String
+    blurHash    String?
     meta        AssetMeta?
 }
 
 model AssetMeta {
-    id                  String  @id @default(uuid())
-    created             DateTime @default(now())
+    id                  String      @id @default(uuid())
+    created             DateTime    @default(now())
     originalFilename    String
     fileSize             Int
     referenceUrl        String
-    asset               Asset?  @relation(fields: [assetId], references: [id])
-    assetId             String  @unique
+
+    resolution          Resolution?
+
+    colorPalette        ColorPalette?
+
+    asset               Asset?      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+    assetId             String      @unique
+}
+
+model Resolution {
+    id              String      @id @default(uuid())
+
+    width           Int
+    height          Int
+
+    assetMeta       AssetMeta?  @relation(fields: [assetMetaId], references: [id], onDelete: Cascade)
+    assetMetaId     String      @unique
+}
+
+model ColorPalette {
+    id              String      @id @default(uuid())
+
+    primary         String
+    colors          String[]
+
+    assetMeta       AssetMeta?  @relation(fields: [assetMetaId], references: [id], onDelete: Cascade)
+    assetMetaId     String      @unique
 }

@@ -26,4 +26,4 @@ CREATE UNIQUE INDEX "Asset_urlPath_key" ON "Asset"("urlPath");
 CREATE UNIQUE INDEX "AssetMeta_assetId_key" ON "AssetMeta"("assetId");
 
 -- AddForeignKey
-ALTER TABLE "AssetMeta" ADD CONSTRAINT "AssetMeta_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "AssetMeta" ADD CONSTRAINT "AssetMeta_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset"("id") ON DELETE CASCADE ON UPDATE CASCADE;
