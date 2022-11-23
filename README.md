@@ -54,7 +54,7 @@ Edit `.barreslby.json` to customize it:
 ```json
 {
   "directory": [
-    "./src/controllers/rest",
+    "./src/controllers/api",
     "./src/controllers/pages"
   ],
   "exclude": [
