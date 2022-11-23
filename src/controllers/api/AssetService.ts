@@ -8,6 +8,7 @@ const prisma = new PrismaClient()
 
 import * as blurhash from "blurhash";
 import { createCanvas, loadImage, Image } from 'canvas';
+import {Exception} from "@tsed/exceptions";
 
 const includeAll = { meta: { include: { colorPalette: true, resolution: true }}};
 
@@ -24,7 +25,9 @@ export async function findAssetById(id : string) : Promise<any> {
             id: id,
         },
         include: includeAll
-    })
+    }).catch(error => {
+        throw new Exception(503, error);
+    });
 }
 
 export async function findAllAssets(page : number, pageSize : number) : Promise<any> {
@@ -32,6 +35,8 @@ export async function findAllAssets(page : number, pageSize : number) : Promise<
         skip: pageSize*page,
         take: pageSize,
         include: includeAll
+    }).catch(error => {
+        throw new Exception(503, error);
     });
 }
 
