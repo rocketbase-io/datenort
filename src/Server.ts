@@ -9,7 +9,7 @@ import methodOverride from "method-override";
 import cors from "cors";
 import "@tsed/ajv";
 import {config} from "./config/index";
-import * as rest from "./controllers/rest/index";
+import * as rest from "./controllers/api/index";
 
 @Configuration({
   ...config,

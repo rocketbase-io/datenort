@@ -12,12 +12,12 @@ describe("Server", () => {
 
   afterEach(PlatformTest.reset);
 
-  it("should call GET /rest", async () => {
+  it("should call GET /api", async () => {
      const response = await request.get("/rest").expect(404);
 
      expect(response.body).toEqual({
        errors: [],
-       message: 'Resource "/rest" not found',
+       message: 'Resource "/api" not found',
        name: "NOT_FOUND",
        status: 404,
      });
