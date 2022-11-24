@@ -1,7 +1,5 @@
 import { AssetMeta } from "../client";
 import { Required, Property, Format, Integer, Allow } from "@tsed/schema";
-import { ResolutionModel } from "./ResolutionModel";
-import { ColorPaletteModel } from "./ColorPaletteModel";
 import { AssetModel } from "./AssetModel";
 
 export class AssetMetaModel implements AssetMeta {
@@ -27,13 +25,13 @@ export class AssetMetaModel implements AssetMeta {
   @Required()
   referenceUrl: string;
 
-  @Property(() => ResolutionModel)
+  @Property(Object)
   @Allow(null)
-  resolution: ResolutionModel | null;
+  resolution: any | null;
 
-  @Property(() => ColorPaletteModel)
+  @Property(Object)
   @Allow(null)
-  colorPalette: ColorPaletteModel | null;
+  colorPalette: any | null;
 
   @Property(() => AssetModel)
   @Allow(null)
