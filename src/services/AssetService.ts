@@ -1,35 +1,55 @@
-import {Inject, Injectable} from "@tsed/di";
+import {Inject, Injectable, Service} from "@tsed/di";
 import {PrismaService} from "@tsed/prisma";
 import {Exception} from "@tsed/exceptions";
 import {PlatformMulterFile} from "@tsed/common";
-import {BlurHashService} from "./BlurHashService";
+import {ImageProcessingService} from "./ImageProcessingService";
 import sizeOf from "image-size";
+import {AwsBucketService} from "./AwsBucketService";
 
 @Injectable()
+@Service()
 export class AssetService {
     @Inject()
     protected prisma: PrismaService;
     @Inject()
-    protected blurHash: BlurHashService;
+    protected processingService: ImageProcessingService;
+    @Inject()
+    protected awsBucketService : AwsBucketService;
 
     private readonly includeAll = {meta: true};
 
-    getAll(pageOptions: { pageSize: number, page: number }) {
+
+    findById(id: string): Object {
+        return this.prisma.asset.findUnique({where: {id: id}, include: this.includeAll})
+            .catch(error => {
+                //Most likely caused by 503 -> Couldn't connect to the database
+                return new Exception(503, error);
+            });
+    }
+
+    findAll(pageOptions: { pageSize: number, page: number }) {
         return this.prisma.asset.findMany({
             skip: pageOptions.pageSize * pageOptions.page,
             take: pageOptions.pageSize,
             include: this.includeAll
         }).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
-            throw new Exception(503, error);
+            return new Exception(503, error);
         });
     }
 
-    async saveAsset(file: PlatformMulterFile) : Promise<Object> {
+    async uploadAsset(file: PlatformMulterFile): Promise<Object> {
+
+        //Image processing for relevant data
+        const _blurHash     = await this.processingService.blurhashFromFile(file);
+        const _imageColors  = await this.processingService.imageColorsFromFile(file);
+
+        this.awsBucketService.uploadFileToBucket("dev-asset-bucket-rcktbs", file);
+
         return this.prisma.asset.create({
             data: {
                 urlPath: "",
-                blurHash: await this.blurHash.getFromFile(file),
+                blurHash: _blurHash,
                 type: file.mimetype,
                 meta: {
                     create: {
@@ -42,10 +62,10 @@ export class AssetService {
                             "height": sizeOf(file.buffer).height,
                         },
                         colorPalette: {
-                            primary: "#43892",
+                            primary: _imageColors[0],
                             colors: [
-                                "#23892",
-                                "#43289"
+                                _imageColors[1],
+                                _imageColors[2]
                             ]
                         }
                     }
