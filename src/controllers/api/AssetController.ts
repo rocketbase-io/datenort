@@ -16,12 +16,12 @@ export class AssetController {
     @StoreSet("required-roles", ["bucket1-access"])
     findAll(@QueryParams("page") page : number,
             @QueryParams("pageSize") pageSize : number) : Promise<Object> {
-        return this.assetService.getAll({pageSize, page});
+        return this.assetService.findAll({pageSize, page});
     }
 
     @Get("/:id")
-    findByd(@PathParams("id") id : string) : Promise <Object> {
-        //return AssetService.findAssetById(id);
+    findByd(@PathParams("id") id : string) : Object {
+        return this.assetService.findById(id);
     }
 
     @Post("/")
@@ -31,6 +31,6 @@ export class AssetController {
                 @QueryParams("k_") k_ : string
     ) : Promise<Object> {
         if(file === undefined) throw new ValidationError("No file was uploaded");
-        return this.assetService.saveAsset(file);
+        return this.assetService.uploadAsset(file);
     }
 }
