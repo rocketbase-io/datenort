@@ -1,25 +1,27 @@
-import {Controller} from "@tsed/di";
+import {Controller, Inject} from "@tsed/di";
 import {Get, Post} from "@tsed/schema";
-import {MultipartFile, PathParams, PlatformMulterFile, QueryParams, UseBefore, ValidationError} from "@tsed/common";
+import {MultipartFile, PathParams, PlatformMulterFile, QueryParams, ValidationError} from "@tsed/common";
 
-import * as AssetService from './AssetService'
 import {StoreSet} from "@tsed/core";
-import {JWTAuthorization} from "../../middleware/JWTAuthorization";
+import {AssetService} from "../../services/AssetService";
 
 @Controller("/asset")
 export class AssetController {
 
+    @Inject()
+    protected assetService : AssetService;
+
     @Get("/")
-    @UseBefore(JWTAuthorization)
+    //@UseBefore(JWTAuthorization)
     @StoreSet("required-roles", ["bucket1-access"])
     findAll(@QueryParams("page") page : number,
             @QueryParams("pageSize") pageSize : number) : Promise<Object> {
-        return AssetService.findAllAssets(page, pageSize);
+        return this.assetService.getAll({pageSize, page});
     }
 
     @Get("/:id")
     findByd(@PathParams("id") id : string) : Promise <Object> {
-        return AssetService.findAssetById(id);
+        //return AssetService.findAssetById(id);
     }
 
     @Post("/")
@@ -27,8 +29,8 @@ export class AssetController {
                 @QueryParams("systemRefId") systemRefId : string,
                 @QueryParams("context") context : string,
                 @QueryParams("k_") k_ : string
-    ) : Object {
+    ) : Promise<Object> {
         if(file === undefined) throw new ValidationError("No file was uploaded");
-        return AssetService.uploadAsset(file);
+        return this.assetService.saveAsset(file);
     }
 }
