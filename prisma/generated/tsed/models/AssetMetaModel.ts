@@ -22,8 +22,8 @@ export class AssetMetaModel implements AssetMeta {
   fileSize: number;
 
   @Property(String)
-  @Required()
-  referenceUrl: string;
+  @Allow(null)
+  referenceUrl: string | null;
 
   @Property(Object)
   @Allow(null)

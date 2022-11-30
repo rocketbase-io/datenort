@@ -18,9 +18,12 @@ generator tsed {
 model Asset {
     id          String  @id @default(uuid())
     urlPath     String
+    bucket      String
     type        String
     blurHash    String?
+    previews    Json?
     meta        AssetMeta?
+    download    String?
 }
 
 model AssetMeta {
@@ -28,7 +31,7 @@ model AssetMeta {
     created             DateTime    @default(now())
     originalFilename    String
     fileSize             Int
-    referenceUrl        String
+    referenceUrl        String?
 
     resolution          Json?
     colorPalette        Json?
