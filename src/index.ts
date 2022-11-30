@@ -8,8 +8,13 @@ async function bootstrap() {
     await platform.listen();
 
     process.on("SIGINT", () => {
+      $log.debug("Server is closing..");
       platform.stop();
     });
+    process.on("SIGTERM", () => {
+      $log.debug("Server is closing..");
+      platform.stop();
+    })
 
 
   } catch (error) {
