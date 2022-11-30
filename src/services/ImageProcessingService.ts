@@ -3,6 +3,8 @@ import {PlatformMulterFile} from "@tsed/common";
 import * as blurhash from "blurhash";
 import sharp from "sharp";
 import getColors from "get-image-colors";
+import sizeOf from "image-size";
+import {ISizeCalculationResult} from "image-size/dist/types/interface";
 
 @Injectable()
 export class ImageProcessingService {
@@ -26,5 +28,9 @@ export class ImageProcessingService {
                 reject(error);
             })
         })
+    }
+    
+    public imageSizeFromFile(file: PlatformMulterFile) : ISizeCalculationResult {
+        return sizeOf(file.buffer);
     }
 }
