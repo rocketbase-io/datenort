@@ -1,6 +1,7 @@
 import {Controller, Inject} from "@tsed/di";
-import {Get, Post} from "@tsed/schema";
+import {Delete, Get, Post, Put} from "@tsed/schema";
 import {
+    BodyParams,
     MultipartFile,
     PathParams,
     PlatformMulterFile,
@@ -33,6 +34,17 @@ export class AssetController {
         return this.assetService.findById(id);
     }
 
+    @Put("/:id")
+    updateById(@PathParams("id") id : string,
+               @BodyParams() updatedAsset : Object) : Object {
+        return this.assetService.updateById(id, updatedAsset);
+    }
+
+    @Delete("/:id")
+    deleteById(@PathParams("id") id : string) {
+        return this.assetService.deleteById(id);
+    }
+
     @Get("/:id/b")
     async downloadById(@PathParams("id") id: string,
                        @Res() res: PlatformResponse) : Promise<Buffer> {
@@ -46,7 +58,7 @@ export class AssetController {
                 @QueryParams("context") context : string,
                 @QueryParams("k_") k_ : string
     ) : Promise<Object> {
-        if(file === undefined) throw new ValidationError("No file was uploaded");
+        if(!file) throw new ValidationError("No file was uploaded");
         return this.assetService.uploadAsset(file, bucket);
     }
 }

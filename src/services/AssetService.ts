@@ -28,11 +28,13 @@ export class AssetService {
     }
 
     findById(id: string): Object {
-        return this.prisma.asset.findUnique({where: {id: id}, include: this.includeAll})
-            .catch(error => {
-                //Most likely caused by 503 -> Couldn't connect to the database
-                return new Exception(503, error);
-            });
+        return this.prisma.asset.findUnique({
+            where: {id: id},
+            include: this.includeAll
+        }).catch(error => {
+            //Most likely caused by 503 -> Couldn't connect to the database
+            throw new Exception(503, error);
+        });
     }
 
     findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) {
@@ -47,8 +49,8 @@ export class AssetService {
 
         return this.prisma.asset.findMany(query).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
-            return new Exception(503, error);
-        });
+            throw new Exception(503, error);
+        })
     }
 
     async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<Object> {
@@ -116,6 +118,37 @@ export class AssetService {
 
         //return asset;
 
-        return this.prisma.asset.create(asset);
+        return this.prisma.asset.create(asset).catch(err => {
+            throw new Exception(400, err);
+        })
+    }
+
+    async updateById(id: string, updatedAsset : any) {
+
+        if(updatedAsset.meta) {
+            await this.prisma.assetMeta.update({
+                where: { assetId: id },
+                data: updatedAsset.meta,
+            }).catch(err => {
+                throw new Exception(400, err);
+            })
+            delete updatedAsset.meta;
+        }
+
+        return await this.prisma.asset.update({
+            where: { id: id },
+            data: updatedAsset,
+            include: this.includeAll
+        }).catch(err => {
+            throw new Exception(400, err);
+        })
+    }
+
+    deleteById(id: string) {
+        return this.prisma.asset.delete({
+            where: { id: id }
+        }).catch(err => {
+            throw new Exception(400, err);
+        })
     }
 }
