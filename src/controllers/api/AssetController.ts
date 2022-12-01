@@ -55,9 +55,7 @@ export class AssetController {
     @StoreSet("dev-asset-bucket-rcktbs", ["bucket1-access"])
     uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
                 @PathParams("bucket") bucket: string,
-                @QueryParams("systemRefId") systemRefId: string,
-                @QueryParams("context") context: string,
-                @QueryParams("k_") k_: string
+                @QueryParams("context") context: string
     ): Promise<Object> {
         if (!file) throw new ValidationError("No file was uploaded");
         return this.assetService.uploadAsset(file, bucket);

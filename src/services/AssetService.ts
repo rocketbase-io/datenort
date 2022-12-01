@@ -1,6 +1,6 @@
 import {Inject, Injectable, Service} from "@tsed/di";
 import {PrismaService} from "@tsed/prisma";
-import {BadRequest, Exception} from "@tsed/exceptions";
+import {BadRequest, Exception, NotFound} from "@tsed/exceptions";
 import {PlatformMulterFile, PlatformResponse} from "@tsed/common";
 import {ImageProcessingService} from "./ImageProcessingService";
 import {AwsBucketService} from "./AwsBucketService";
@@ -21,30 +21,36 @@ export class AssetService {
 
     async downloadAsset(id: string, res: PlatformResponse) : Promise<Buffer> {
         const asset : any = await this.findById(id);
-        if(!asset) throw new BadRequest("Couldn't find the asset with the given id.");
         res.attachment(asset.meta.originalFilename);
         res.contentType(asset.type);
-        return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath);
+        return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
+           throw new BadRequest(err.message);
+        });
     }
 
-    findById(id: string): Object {
-        return this.prisma.asset.findUnique({
+    async findById(id: string): Promise<Object> {
+        let asset = await this.prisma.asset.findUnique({
             where: {id: id},
             include: this.includeAll
         }).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         });
+
+        if(!asset) throw new NotFound("No asset found with id: " + id, "findById()");
+        return asset;
     }
 
     async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) {
 
+        //If no argument is given -> search for all with page size 5 on page zero
         let query = {
-            skip: pageOptions.pageSize * pageOptions.page,
-            take: pageOptions.pageSize,
+            skip: pageOptions.pageSize || 5 * pageOptions.page | 0,
+            take: pageOptions.pageSize || 5,
             include: this.includeAll,
             where: {}
         }
+
         if (pageOptions.bucket != undefined) query.where = {bucket: pageOptions.bucket};
 
         return await this.prisma.asset.findMany(query).catch(error => {
@@ -125,12 +131,14 @@ export class AssetService {
 
     async updateById(id: string, updatedAsset : any) {
 
+        //Necessary because AssetMeta is a different Model
         if(updatedAsset.meta) {
             await this.prisma.assetMeta.update({
                 where: { assetId: id },
                 data: updatedAsset.meta,
             }).catch(err => {
-                throw new Exception(400, err);
+                if(err.code === "P2025") throw new NotFound(err.meta.cause);
+                throw new BadRequest(err.message);
             })
             delete updatedAsset.meta;
         }
@@ -140,7 +148,8 @@ export class AssetService {
             data: updatedAsset,
             include: this.includeAll
         }).catch(err => {
-            throw new Exception(400, err);
+            if(err.code === "P2025") throw new NotFound(err.meta.cause);
+            throw new BadRequest(err.message);
         })
     }
 
@@ -148,9 +157,14 @@ export class AssetService {
         let asset = await this.prisma.asset.delete({
             where: { id: id }
         }).catch(err => {
-            throw new Exception(400, err);
+            if(err.code === "P2025") throw new NotFound(err.meta.cause);
+            throw new BadRequest(err.message);
         });
 
-        return await this.awsBucketService.deleteFileFromBucket(asset.bucket, asset.urlPath);
+        await this.awsBucketService.deleteFileFromBucket(asset.bucket, asset.urlPath).catch(err=>{
+            throw new BadRequest(err.message);
+        });
+
+        return asset;
     }
 }
