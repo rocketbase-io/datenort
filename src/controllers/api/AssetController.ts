@@ -14,6 +14,7 @@ import {
 import {StoreSet} from "@tsed/core";
 import {AssetService} from "../../services/AssetService";
 import {JWTAuthorization} from "../../middleware/JWTAuthorization";
+import {Asset} from "@prisma/client";
 
 @Controller("/asset")
 export class AssetController {
@@ -24,23 +25,23 @@ export class AssetController {
     @Get("/")
     findAll(@QueryParams("page") page: number,
             @QueryParams("pageSize") pageSize: number,
-            @QueryParams("bucket") bucket?: string): Promise<Object> {
+            @QueryParams("bucket") bucket?: string) : Promise<Asset[]> {
         return this.assetService.findAll({pageSize, page, bucket});
     }
 
     @Get("/:id")
-    findById(@PathParams("id") id: string): Object {
+    findById(@PathParams("id") id: string): Promise<Asset> {
         return this.assetService.findById(id);
     }
 
     @Put("/:id")
     updateById(@PathParams("id") id: string,
-               @BodyParams() updatedAsset: Object): Object {
+               @BodyParams() updatedAsset: Object) : Promise<Asset> {
         return this.assetService.updateById(id, updatedAsset);
     }
 
     @Delete("/:id")
-    deleteById(@PathParams("id") id: string) {
+    deleteById(@PathParams("id") id: string) : Promise<Asset>  {
         return this.assetService.deleteById(id);
     }
 
@@ -56,7 +57,7 @@ export class AssetController {
     uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
                 @PathParams("bucket") bucket: string,
                 @QueryParams("context") context: string
-    ): Promise<Object> {
+    ) : Promise<Asset> {
         if (!file) throw new ValidationError("No file was uploaded");
         return this.assetService.uploadAsset(file, bucket);
     }

@@ -6,6 +6,7 @@ import {ImageProcessingService} from "./ImageProcessingService";
 import {AwsBucketService} from "./AwsBucketService";
 import {randomUUID} from "crypto";
 import path from "path";
+import {Asset} from "@prisma/client";
 
 @Injectable()
 @Service()
@@ -28,8 +29,9 @@ export class AssetService {
         });
     }
 
-    async findById(id: string): Promise<Object> {
-        let asset = await this.prisma.asset.findUnique({
+    async findById(id: string): Promise<Asset> {
+
+        let asset: Asset | null = await this.prisma.asset.findUnique({
             where: {id: id},
             include: this.includeAll
         }).catch(error => {
@@ -41,7 +43,7 @@ export class AssetService {
         return asset;
     }
 
-    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) {
+    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) : Promise<Asset[]>{
 
         //If no argument is given -> search for all with page size 5 on page zero
         let query = {
@@ -51,7 +53,7 @@ export class AssetService {
             where: {}
         }
 
-        if (pageOptions.bucket != undefined) query.where = {bucket: pageOptions.bucket};
+        if (pageOptions.bucket) query.where = {bucket: pageOptions.bucket};
 
         return await this.prisma.asset.findMany(query).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
@@ -59,7 +61,7 @@ export class AssetService {
         })
     }
 
-    async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<Object> {
+    async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<Asset> {
 
         const uuid = randomUUID();
 
@@ -122,14 +124,12 @@ export class AssetService {
             }
         }
 
-        //return asset;
-
         return this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
         })
     }
 
-    async updateById(id: string, updatedAsset : any) {
+    async updateById(id: string, updatedAsset : any) : Promise<Asset> {
 
         //Necessary because AssetMeta is a different Model
         if(updatedAsset.meta) {
@@ -153,8 +153,8 @@ export class AssetService {
         })
     }
 
-    async deleteById(id: string) {
-        let asset = await this.prisma.asset.delete({
+    async deleteById(id: string) : Promise<Asset> {
+        let asset : Asset = await this.prisma.asset.delete({
             where: { id: id }
         }).catch(err => {
             if(err.code === "P2025") throw new NotFound(err.meta.cause);
