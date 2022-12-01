@@ -3,4 +3,3 @@
  */
 
 export * from "./AssetController";
-export * from "./MetricsController";
