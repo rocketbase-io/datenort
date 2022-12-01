@@ -8,8 +8,9 @@ import cookieParser from "cookie-parser";
 import methodOverride from "method-override";
 import cors from "cors";
 import "@tsed/ajv";
-import {config} from "./config/index";
-import * as rest from "./controllers/api/index";
+import {config} from "./config";
+import * as api from "./controllers/api/index";
+import * as metric from "./controllers/metrics/index";
 
 @Configuration({
   ...config,
@@ -19,7 +20,10 @@ import * as rest from "./controllers/api/index";
   componentsScan: false,
   mount: {
     "/api": [
-      ...Object.values(rest)
+      ...Object.values(api)
+    ],
+    "/": [
+      ...Object.values(metric)
     ]
   },
   middlewares: [
