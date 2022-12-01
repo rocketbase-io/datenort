@@ -1,13 +1,13 @@
 import {Injectable, Service} from "@tsed/di";
-import * as Prometheus from "prom-client";
+import {collectDefaultMetrics, Registry,} from "prom-client";
 
 @Injectable()
 @Service()
 export class PrometheusService {
-    private register = new Prometheus.Registry();
+    public register = new Registry();
     constructor() {
         this.register.setDefaultLabels({ app: 'example-nodejs-app' })
-        Prometheus.collectDefaultMetrics({ register: this.register });
+        collectDefaultMetrics({ register: this.register });
     }
 
     getMetrics() {
