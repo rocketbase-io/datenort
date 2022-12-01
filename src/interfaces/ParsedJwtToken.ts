@@ -1,10 +1,10 @@
 export interface ParsedJwtToken {
-    header: {
+    "header": {
         alg: string,
         typ: string,
         kid: string
     },
-    payload: {
+    "payload": {
         "exp": number,
         "iat": number,
         "jti": string,
@@ -35,5 +35,5 @@ export interface ParsedJwtToken {
         "family_name": string,
         "email": string
     },
-    signature: string
+    "signature": string
 }
