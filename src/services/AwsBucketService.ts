@@ -11,8 +11,6 @@ export class AwsBucketService {
 
     constructor() {
         AWS.config.update({
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
             region: "eu-central-1"
         });
 
@@ -41,6 +39,13 @@ export class AwsBucketService {
                 else reject(err);
             });
         });
+    }
+
+    async deleteFileFromBucket(bucket: string, filePath: string) : Promise<any> {
+        return await this.s3.deleteObject({Bucket: bucket, Key: filePath}, (err, data) => {
+            if(err) throw new Exception(400, err.message);
+            return data;
+        }).promise();
     }
 
     async uploadFileToBucket(bucket: string, file: PlatformMulterFile, filePath: string) {

@@ -37,7 +37,7 @@ export class AssetService {
         });
     }
 
-    findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) {
+    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) {
 
         let query = {
             skip: pageOptions.pageSize * pageOptions.page,
@@ -47,7 +47,7 @@ export class AssetService {
         }
         if (pageOptions.bucket != undefined) query.where = {bucket: pageOptions.bucket};
 
-        return this.prisma.asset.findMany(query).catch(error => {
+        return await this.prisma.asset.findMany(query).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         })
@@ -87,7 +87,7 @@ export class AssetService {
                         originalFilename: file.originalname,
                         fileSize: file.size,
                         created: new Date(),
-                        referenceUrl: "ursprungs url der datei",
+                        referenceUrl: null, //file upload origin -> when downloaded
                     }
                 }
             },
@@ -144,11 +144,13 @@ export class AssetService {
         })
     }
 
-    deleteById(id: string) {
-        return this.prisma.asset.delete({
+    async deleteById(id: string) {
+        let asset = await this.prisma.asset.delete({
             where: { id: id }
         }).catch(err => {
             throw new Exception(400, err);
-        })
+        });
+
+        return await this.awsBucketService.deleteFileFromBucket(asset.bucket, asset.urlPath);
     }
 }
