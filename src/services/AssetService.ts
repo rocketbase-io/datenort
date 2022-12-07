@@ -7,6 +7,8 @@ import {AwsBucketService} from "./AwsBucketService";
 import {randomUUID} from "crypto";
 import path from "path";
 import {Asset} from "@prisma/client";
+import {AssetFormatterService} from "./AssetFormatterService";
+import {FormattedAsset} from "../interfaces/FormattedAsset";
 
 @Injectable()
 @Service()
@@ -17,51 +19,51 @@ export class AssetService {
     protected processingService: ImageProcessingService;
     @Inject()
     protected awsBucketService: AwsBucketService;
-
-    private readonly includeAll = {meta: true};
+    @Inject()
+    protected assetFormatter: AssetFormatterService;
 
     async downloadAsset(id: string, res: PlatformResponse) : Promise<Buffer> {
         const asset : any = await this.findById(id);
-        res.attachment(asset.meta.originalFilename);
+        res.attachment(asset.originalFilename);
         res.contentType(asset.type);
         return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
            throw new BadRequest(err.message);
         });
     }
 
-    async findById(id: string): Promise<Asset> {
+    async findById(id: string): Promise<FormattedAsset>  {
 
-        let asset: Asset | null = await this.prisma.asset.findUnique({
-            where: {id: id},
-            include: this.includeAll
+        let rawAsset: Asset | null = await this.prisma.asset.findUnique({
+            where: {id: id}
         }).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         });
 
-        if(!asset) throw new NotFound("No asset found with id: " + id, "findById()");
-        return asset;
+        if(!rawAsset) throw new NotFound("No asset found with id: " + id, "findById()");
+        return this.assetFormatter.format(rawAsset);
     }
 
-    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) : Promise<Asset[]>{
+    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) : Promise<FormattedAsset[]>{
 
         //If no argument is given -> search for all with page size 5 on page zero
         let query = {
             skip: pageOptions.pageSize || 5 * pageOptions.page | 0,
             take: pageOptions.pageSize || 5,
-            include: this.includeAll,
             where: {}
         }
 
         if (pageOptions.bucket) query.where = {bucket: pageOptions.bucket};
 
-        return await this.prisma.asset.findMany(query).catch(error => {
+        let rawAssets = await this.prisma.asset.findMany(query).catch(error => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
-        })
+        });
+
+        return rawAssets.map(rawAsset => this.assetFormatter.format(rawAsset));
     }
 
-    async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<Asset> {
+    async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<FormattedAsset>  {
 
         const uuid = randomUUID();
 
@@ -90,16 +92,11 @@ export class AssetService {
                 type: file.mimetype,
                 download: `http://0.0.0.0:8083/api/asset/${uuid}/b`,
                 urlPath: filePath,
-                meta: {
-                    create: {
-                        originalFilename: file.originalname,
-                        fileSize: file.size,
-                        created: new Date(),
-                        referenceUrl: null, //file upload origin -> when downloaded
-                    }
-                }
-            },
-            include: this.includeAll
+                originalFilename: file.originalname,
+                fileSize: file.size,
+                created: new Date(),
+                referenceUrl: null, //file upload origin -> when downloaded
+            }
         };
 
         if (isImage) {
@@ -109,13 +106,11 @@ export class AssetService {
             const imageHeight = this.processingService.imageSizeFromFile(file).height;
 
             asset.data['blurHash'] = _blurHash;
-            asset.data.meta.create['resolution'] = {
-                width: imageWidth,
-                height: imageHeight
-            }
+            asset.data['imageWidth'] = imageWidth;
+            asset.data['imageHeight'] = imageHeight;
 
             //If image colors can be read... Not every filetype is supported
-            if (_imageColors) asset.data.meta.create['colorPalette'] = {
+            if (_imageColors) asset.data['colorPalette'] = {
                 primary: _imageColors[0],
                 colors: [
                     _imageColors[1],
@@ -124,47 +119,37 @@ export class AssetService {
             }
         }
 
-        return this.prisma.asset.create(asset).catch(err => {
+        let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
-        })
+        });
+        
+        return this.assetFormatter.format(rawAsset);
     }
 
-    async updateById(id: string, updatedAsset : any) : Promise<Asset> {
-
-        //Necessary because AssetMeta is a different Model
-        if(updatedAsset.meta) {
-            await this.prisma.assetMeta.update({
-                where: { assetId: id },
-                data: updatedAsset.meta,
-            }).catch(err => {
-                if(err.code === "P2025") throw new NotFound(err.meta.cause);
-                throw new BadRequest(err.message);
-            })
-            delete updatedAsset.meta;
-        }
-
-        return await this.prisma.asset.update({
+    async updateById(id: string, updatedAsset : any) : Promise<FormattedAsset>  {
+        let rawAsset = await this.prisma.asset.update({
             where: { id: id },
-            data: updatedAsset,
-            include: this.includeAll
+            data: updatedAsset
         }).catch(err => {
             if(err.code === "P2025") throw new NotFound(err.meta.cause);
             throw new BadRequest(err.message);
-        })
+        });
+
+        return this.assetFormatter.format(rawAsset);
     }
 
-    async deleteById(id: string) : Promise<Asset> {
-        let asset : Asset = await this.prisma.asset.delete({
+    async deleteById(id: string) : Promise<FormattedAsset>  {
+        let rawAsset : Asset = await this.prisma.asset.delete({
             where: { id: id }
         }).catch(err => {
             if(err.code === "P2025") throw new NotFound(err.meta.cause);
             throw new BadRequest(err.message);
         });
 
-        await this.awsBucketService.deleteFileFromBucket(asset.bucket, asset.urlPath).catch(err=>{
+        await this.awsBucketService.deleteFileFromBucket(rawAsset.bucket, rawAsset.urlPath).catch(err=>{
             throw new BadRequest(err.message);
         });
 
-        return asset;
+        return this.assetFormatter.format(rawAsset);
     }
 }

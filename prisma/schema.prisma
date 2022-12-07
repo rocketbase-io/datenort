@@ -15,46 +15,17 @@ generator tsed {
 }
 
 model Asset {
-    id          String  @id @default(uuid())
-    urlPath     String
-    bucket      String
-    type        String
-    blurHash    String?
-    previews    Json?
-    meta        AssetMeta?
-    download    String?
-}
-
-model AssetMeta {
-    id                  String      @id @default(uuid())
+    id                  String  @id @default(uuid())
+    urlPath             String
+    bucket              String
+    type                String
+    blurHash            String?
     created             DateTime    @default(now())
     originalFilename    String
     fileSize             Int
     referenceUrl        String?
-
-    resolution          Json?
+    imageWidth          Int?
+    imageHeight         Int?
     colorPalette        Json?
-
-    asset               Asset?      @relation(fields: [assetId], references: [id], onDelete: Cascade)
-    assetId             String      @unique
+    download            String
 }
-
-//model Resolution {
-//    id              String      @id @default(uuid())
-//
-//    width           Int
-//    height          Int
-//
-//    assetMeta       AssetMeta?  @relation(fields: [assetMetaId], references: [id], onDelete: Cascade)
-//    assetMetaId     String      @unique
-//}
-
-//model ColorPalette {
-//    id              String      @id @default(uuid())
-//
-//    primary         String
-//    colors          String[]
-//
-//    assetMeta       AssetMeta?  @relation(fields: [assetMetaId], references: [id], onDelete: Cascade)
-//    assetMetaId     String      @unique
-//}
