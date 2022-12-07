@@ -1,7 +1,7 @@
 import {Inject, Injectable, Service} from "@tsed/di";
 import {PrismaService} from "@tsed/prisma";
 import {BadRequest, Exception, NotFound} from "@tsed/exceptions";
-import {PlatformMulterFile, PlatformResponse} from "@tsed/common";
+import {PlatformMulterFile, PlatformResponse, ValidationError} from "@tsed/common";
 import {ImageProcessingService} from "./ImageProcessingService";
 import {AwsBucketService} from "./AwsBucketService";
 import {randomUUID} from "crypto";
@@ -64,7 +64,7 @@ export class AssetService {
     }
 
     async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<FormattedAsset>  {
-
+        if (!file) throw new ValidationError("No file was uploaded");
         const uuid = randomUUID();
 
         //Image processing for relevant data

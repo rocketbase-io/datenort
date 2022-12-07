@@ -7,8 +7,7 @@ import {
     PlatformMulterFile,
     PlatformResponse,
     QueryParams,
-    Res,
-    ValidationError
+    Res
 } from "@tsed/common";
 
 import {StoreSet} from "@tsed/core";
@@ -62,7 +61,6 @@ export class AssetController {
     uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
                 @PathParams("bucket") bucket: string
     ) : Promise<FormattedAsset> {
-        if (!file) throw new ValidationError("No file was uploaded");
         return this.assetService.uploadAsset(file, bucket);
     }
 }
