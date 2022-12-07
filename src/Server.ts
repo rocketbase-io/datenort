@@ -1,7 +1,8 @@
 import {join} from "path";
 import {Configuration, Inject} from "@tsed/di";
 import {PlatformApplication} from "@tsed/common";
-import "@tsed/platform-express"; // /!\ keep this import
+import "@tsed/platform-express";
+import "@tsed/swagger"
 import bodyParser from "body-parser";
 import compress from "compression";
 import cookieParser from "cookie-parser";
@@ -26,6 +27,12 @@ import * as metric from "./controllers/metrics/index";
       ...Object.values(metric)
     ]
   },
+  swagger: [
+    {
+      path: "/api/docs",
+      pathPatterns: ["/api/**"]
+    }
+  ],
   middlewares: [
     cors(),
     cookieParser(),
