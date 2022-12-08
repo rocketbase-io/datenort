@@ -55,12 +55,29 @@ export class AssetController {
     }
 
     @Post("/:bucket")
-    @Summary("Upload file to bucket and save meta data to database")
+    @Summary("Upload file to bucket and save meta data to the database")
     //@UseBefore(JWTAuthorization)
     @StoreSet("dev-asset-bucket-rcktbs", ["bucket1-access"])
     uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
                 @PathParams("bucket") bucket: string
     ) : Promise<FormattedAsset> {
         return this.assetService.uploadAsset(file, bucket);
+    }
+
+    @Post("/multi/:bucket")
+    @Summary("Upload multiple files to bucket and saves it's meta data to the database")
+    async uploadAssets(@MultipartFile("files") files: PlatformMulterFile[],
+                @PathParams("bucket") bucket: string
+    ) : Promise<FormattedAsset[]> {
+        let assets : FormattedAsset[] = [];
+        for(let file of files) assets.push(await this.assetService.uploadAsset(file, bucket));
+        return assets;
+    }
+
+    @Post("/batch/:bucket")
+    async uploadDownloadedAssets(@BodyParams("urls") urls: string[],
+                           @PathParams("bucket") bucket: string
+    ) : Promise<any> {
+        return await this.assetService.batchUpload(urls, bucket);
     }
 }

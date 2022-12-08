@@ -9,6 +9,8 @@ import path from "path";
 import {Asset} from "@prisma/client";
 import {AssetFormatterService} from "./AssetFormatterService";
 import {FormattedAsset} from "../interfaces/FormattedAsset";
+import axios from "axios";
+import fileType from "file-type"
 
 @Injectable()
 @Service()
@@ -29,6 +31,38 @@ export class AssetService {
         return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
            throw new BadRequest(err.message);
         });
+    }
+
+    async downloadAssetFromUrl(url: string) : Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            axios.get(url, {responseType: "arraybuffer"}).then(res => {
+                resolve(res.data);
+            }).catch(err => {
+                reject(err);
+            })
+        })
+    }
+
+    async batchUpload(urls: string[], bucket: string) : Promise<FormattedAsset[]> {
+        let assets : FormattedAsset[] = [];
+        for (let url of urls) {
+            let fileBuffer = await this.downloadAssetFromUrl(url);
+            let fileName = url.split('/').filter(s=> s != "").reverse()[0];
+            let mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
+            let fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
+            if(!mimeType) throw new ValidationError("File type of downloaded url couldn't be determined", ["url: " + url]);
+
+            let platformFile : any = {
+                buffer: fileBuffer,
+                size: fileBuffer.toString().length,
+                mimetype: mimeType,
+                originalname: `${fileName}.${fileExt}`,
+                referenceUrl: url,
+            };
+
+            assets.push(await this.uploadAsset(platformFile, bucket));
+        }
+        return assets;
     }
 
     async findById(id: string): Promise<FormattedAsset>  {
@@ -63,7 +97,7 @@ export class AssetService {
         return rawAssets.map(rawAsset => this.assetFormatter.format(rawAsset));
     }
 
-    async uploadAsset(file: PlatformMulterFile, bucket: string): Promise<FormattedAsset>  {
+    async uploadAsset(file: PlatformMulterFile | any, bucket: string): Promise<FormattedAsset>  {
         if (!file) throw new ValidationError("No file was uploaded");
         const uuid = randomUUID();
 
@@ -99,6 +133,7 @@ export class AssetService {
             }
         };
 
+        if (file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;
         if (isImage) {
             const _blurHash = await this.processingService.blurhashFromFile(file).catch(() => console.log("Couldn't process blurHash."));
             const _imageColors = await this.processingService.imageColorsFromFile(file).catch(() => console.log("Couldn't process image colors."));
