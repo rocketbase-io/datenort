@@ -11,6 +11,7 @@ import {AssetFormatterService} from "./AssetFormatterService";
 import {FormattedAsset} from "../interfaces/FormattedAsset";
 import axios from "axios";
 import fileType from "file-type"
+import {FileInfo} from "../interfaces/FileInfo";
 
 @Injectable()
 @Service()
@@ -60,7 +61,7 @@ export class AssetService {
                 referenceUrl: url,
             };
 
-            assets.push(await this.uploadAsset(platformFile, bucket));
+            assets.push(await this.uploadAsset(platformFile, bucket, true));
         }
         return assets;
     }
@@ -97,12 +98,9 @@ export class AssetService {
         return rawAssets.map(rawAsset => this.assetFormatter.format(rawAsset));
     }
 
-    async uploadAsset(file: PlatformMulterFile | any, bucket: string): Promise<FormattedAsset>  {
+    async uploadAsset(file: PlatformMulterFile | any, bucket: string, upload: boolean): Promise<FormattedAsset>  {
         if (!file) throw new ValidationError("No file was uploaded");
         const uuid = randomUUID();
-
-        //Image processing for relevant data
-        const isImage = file.mimetype.split('/')[0] == "image";
 
         let folderPath = uuid;
         folderPath = folderPath.substring(32, 36); //Get last for characters
@@ -111,54 +109,57 @@ export class AssetService {
         let fileExtension = path.extname(file.originalname);
         let filePath = folderPath + uuid + fileExtension;
 
-        //wait for upload file
-        await this.awsBucketService.uploadFileToBucket(bucket, file, filePath)
+        //wait for upload file if upload is true
+        if(upload) await this.awsBucketService.uploadFileToBucket(bucket, file, filePath)
             .catch(error => {
                 console.log(error);
                 throw new Exception(error.statusCode, error.statusCode == 403 ? "No authorization for this bucket" : "Bucket does not exist");
             });
 
-        let asset: any;
-        asset = {
-            data: {
-                id: uuid,
-                bucket: bucket,
-                type: file.mimetype,
-                download: `http://0.0.0.0:8083/api/asset/${uuid}/b`,
-                urlPath: filePath,
-                originalFilename: file.originalname,
-                fileSize: file.size,
-                created: new Date(),
-                referenceUrl: null, //file upload origin -> when downloaded
-            }
-        };
-
-        if (file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;
-        if (isImage) {
-            const _blurHash = await this.processingService.blurhashFromFile(file).catch(() => console.log("Couldn't process blurHash."));
-            const _imageColors = await this.processingService.imageColorsFromFile(file).catch(() => console.log("Couldn't process image colors."));
-            const imageWidth = this.processingService.imageSizeFromFile(file).width;
-            const imageHeight = this.processingService.imageSizeFromFile(file).height;
-
-            asset.data['blurHash'] = _blurHash;
-            asset.data['imageWidth'] = imageWidth;
-            asset.data['imageHeight'] = imageHeight;
-
-            //If image colors can be read... Not every filetype is supported
-            if (_imageColors) asset.data['colorPalette'] = {
-                primary: _imageColors[0],
-                colors: [
-                    _imageColors[1],
-                    _imageColors[2]
-                ]
-            }
+        let assetInfo: FileInfo = {
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            originalname: file.originalname,
+            size: file.size,
+            referenceUrl: file.referenceUrl
         }
+
+        let asset = await this.processingService.generateAssetInput(assetInfo, {bucket, filePath, uuid});
 
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
         });
         
         return this.assetFormatter.format(rawAsset);
+    }
+
+    async analyzeFile(file: FileInfo) {
+        let assetInfo: FileInfo = {
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            originalname: file.originalname,
+            size: file.size
+        }
+        let asset = await this.processingService.generateAssetInput(assetInfo);
+        return this.assetFormatter.format(asset.data);
+    }
+
+    async analyzeUrl(url: string) {
+        let fileBuffer = await this.downloadAssetFromUrl(url);
+        let fileName = url.split('/').filter(s=> s != "").reverse()[0];
+        let mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
+        let fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
+        if(!mimeType) throw new ValidationError("File type of downloaded url couldn't be determined", ["url: " + url]);
+
+        let assetInfo : FileInfo = {
+            buffer: fileBuffer,
+            size: fileBuffer.toString().length,
+            mimetype: mimeType,
+            originalname: `${fileName}.${fileExt}`,
+            referenceUrl: url
+        };
+        let asset = await this.processingService.generateAssetInput(assetInfo);
+        return this.assetFormatter.format(asset.data);
     }
 
     async updateById(id: string, updatedAsset : any) : Promise<FormattedAsset>  {
