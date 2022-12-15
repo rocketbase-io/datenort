@@ -2,7 +2,7 @@ import {Inject, Injectable, Service} from "@tsed/di";
 import {PrismaService} from "@tsed/prisma";
 import {BadRequest, Exception, NotFound} from "@tsed/exceptions";
 import {PlatformMulterFile, PlatformResponse, ValidationError} from "@tsed/common";
-import {ImageProcessingService} from "./ImageProcessingService";
+import {AssetProcessingService} from "./AssetProcessingService";
 import {AwsBucketService} from "./AwsBucketService";
 import {randomUUID} from "crypto";
 import path from "path";
@@ -12,6 +12,7 @@ import {FormattedAsset} from "../interfaces/FormattedAsset";
 import axios from "axios";
 import fileType from "file-type"
 import {FileInfo} from "../interfaces/FileInfo";
+import {getBufferFromUrl, getFileFromUrl} from "../utils/utils";
 
 @Injectable()
 @Service()
@@ -19,87 +20,45 @@ export class AssetService {
     @Inject()
     protected prisma: PrismaService;
     @Inject()
-    protected processingService: ImageProcessingService;
-    @Inject()
-    protected awsBucketService: AwsBucketService;
+    protected processingService: AssetProcessingService;
     @Inject()
     protected assetFormatter: AssetFormatterService;
-
-    async downloadAsset(id: string, res: PlatformResponse) : Promise<Buffer> {
-        const asset : any = await this.findById(id);
-        res.attachment(asset.originalFilename);
-        res.contentType(asset.type);
-        return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
-           throw new BadRequest(err.message);
-        });
-    }
-
-    async downloadAssetFromUrl(url: string) : Promise<Buffer> {
-        return new Promise((resolve, reject) => {
-            axios.get(url, {responseType: "arraybuffer"}).then(res => {
-                resolve(res.data);
-            }).catch(err => {
-                reject(err);
-            })
-        })
-    }
+    @Inject()
+    protected awsBucketService: AwsBucketService;
 
     async batchUpload(urls: string[], bucket: string) : Promise<FormattedAsset[]> {
         let assets : FormattedAsset[] = [];
         for (let url of urls) {
-            let fileBuffer = await this.downloadAssetFromUrl(url);
-            let fileName = url.split('/').filter(s=> s != "").reverse()[0];
-            let mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
-            let fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
-            if(!mimeType) throw new ValidationError("File type of downloaded url couldn't be determined", ["url: " + url]);
-
-            let platformFile : any = {
-                buffer: fileBuffer,
-                size: fileBuffer.toString().length,
-                mimetype: mimeType,
-                originalname: `${fileName}.${fileExt}`,
-                referenceUrl: url,
-            };
-
-            assets.push(await this.uploadAsset(platformFile, bucket, true));
+            let fileInfo = await getFileFromUrl(url);
+            fileInfo.analyzed = new Date();
+            assets.push(await this.uploadAsset(fileInfo, bucket));
         }
         return assets;
     }
 
-    async findById(id: string): Promise<FormattedAsset>  {
+    async saveFileToDB(file: FileInfo) {
+        if (!file) throw new ValidationError("No file found");
+        const uuid = randomUUID();
+        let assetInfo: FileInfo = {
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            originalname: file.originalname,
+            size: file.size,
+            referenceUrl: file.referenceUrl,
+            analyzed: file.analyzed
+        }
 
-        let rawAsset: Asset | null = await this.prisma.asset.findUnique({
-            where: {id: id}
-        }).catch(error => {
-            //Most likely caused by 503 -> Couldn't connect to the database
-            throw new Exception(503, error);
+        let asset = await this.processingService.generateAssetInput(assetInfo, {uuid});
+
+        let rawAsset = await this.prisma.asset.create(asset).catch(err => {
+            throw new Exception(400, err);
         });
 
-        if(!rawAsset) throw new NotFound("No asset found with id: " + id, "findById()");
         return this.assetFormatter.format(rawAsset);
     }
 
-    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) : Promise<FormattedAsset[]>{
-
-        //If no argument is given -> search for all with page size 5 on page zero
-        let query = {
-            skip: pageOptions.pageSize || 5 * pageOptions.page | 0,
-            take: pageOptions.pageSize || 5,
-            where: {}
-        }
-
-        if (pageOptions.bucket) query.where = {bucket: pageOptions.bucket};
-
-        let rawAssets = await this.prisma.asset.findMany(query).catch(error => {
-            //Most likely caused by 503 -> Couldn't connect to the database
-            throw new Exception(503, error);
-        });
-
-        return rawAssets.map(rawAsset => this.assetFormatter.format(rawAsset));
-    }
-
-    async uploadAsset(file: PlatformMulterFile | any, bucket: string, upload: boolean): Promise<FormattedAsset>  {
-        if (!file) throw new ValidationError("No file was uploaded");
+    async uploadAsset(file: PlatformMulterFile | any, bucket: string): Promise<FormattedAsset>  {
+        if (!file) throw new ValidationError("No file found");
         const uuid = randomUUID();
 
         let folderPath = uuid;
@@ -110,7 +69,7 @@ export class AssetService {
         let filePath = folderPath + uuid + fileExtension;
 
         //wait for upload file if upload is true
-        if(upload) await this.awsBucketService.uploadFileToBucket(bucket, file, filePath)
+        await this.awsBucketService.uploadFileToBucket(bucket, file, filePath)
             .catch(error => {
                 console.log(error);
                 throw new Exception(error.statusCode, error.statusCode == 403 ? "No authorization for this bucket" : "Bucket does not exist");
@@ -121,7 +80,7 @@ export class AssetService {
             mimetype: file.mimetype,
             originalname: file.originalname,
             size: file.size,
-            referenceUrl: file.referenceUrl
+            referenceUrl: file.referenceUrl,
         }
 
         let asset = await this.processingService.generateAssetInput(assetInfo, {bucket, filePath, uuid});
@@ -133,7 +92,7 @@ export class AssetService {
         return this.assetFormatter.format(rawAsset);
     }
 
-    async analyzeFile(file: FileInfo) {
+    async analyzeFile(file: FileInfo) : Promise<FormattedAsset> {
         let assetInfo: FileInfo = {
             buffer: file.buffer,
             mimetype: file.mimetype,
@@ -144,24 +103,19 @@ export class AssetService {
         return this.assetFormatter.format(asset.data);
     }
 
-    async analyzeUrl(url: string) {
-        let fileBuffer = await this.downloadAssetFromUrl(url);
-        let fileName = url.split('/').filter(s=> s != "").reverse()[0];
-        let mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
-        let fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
-        if(!mimeType) throw new ValidationError("File type of downloaded url couldn't be determined", ["url: " + url]);
-
-        let assetInfo : FileInfo = {
-            buffer: fileBuffer,
-            size: fileBuffer.toString().length,
-            mimetype: mimeType,
-            originalname: `${fileName}.${fileExt}`,
-            referenceUrl: url
-        };
+    async analyzeUrl(url: string) : Promise<FormattedAsset> {
+        let assetInfo = await getFileFromUrl(url);
         let asset = await this.processingService.generateAssetInput(assetInfo);
         return this.assetFormatter.format(asset.data);
     }
 
+    async saveAnalyzedUrl(url: string) : Promise<FormattedAsset>{
+        let assetInfo = await getFileFromUrl(url);
+        assetInfo.analyzed = new Date();
+        return await this.saveFileToDB(assetInfo);
+    }
+
+    //TODO: upadatedAsset type any can cause errors
     async updateById(id: string, updatedAsset : any) : Promise<FormattedAsset>  {
         let rawAsset = await this.prisma.asset.update({
             where: { id: id },
@@ -173,7 +127,6 @@ export class AssetService {
 
         return this.assetFormatter.format(rawAsset);
     }
-
     async deleteById(id: string) : Promise<FormattedAsset>  {
         let rawAsset : Asset = await this.prisma.asset.delete({
             where: { id: id }
