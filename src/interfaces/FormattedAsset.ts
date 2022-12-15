@@ -1,11 +1,12 @@
 export interface FormattedAsset {
     id: string,
-    urlPath: string,
-    bucket: string,
+    urlPath?: string,
+    bucket?: string,
     type: string,
     created: Date,
     originalFilename: string,
     referenceUrl?: string,
+    analyzed?: Date,
     fileSize: string,
     imageData?: {
         blurHash: string,
@@ -18,5 +19,5 @@ export interface FormattedAsset {
             primary: string
         }
     }
-    download: string
+    download?: string
 }

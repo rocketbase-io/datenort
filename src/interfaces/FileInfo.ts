@@ -3,5 +3,6 @@ export interface FileInfo {
     mimetype: string,
     originalname: string,
     size: number,
-    referenceUrl?: string
+    referenceUrl?: string,
+    analyzed?: Date
 }

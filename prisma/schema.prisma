@@ -16,16 +16,17 @@ generator tsed {
 
 model Asset {
     id                  String  @id @default(uuid())
-    urlPath             String
-    bucket              String
+    urlPath             String?
+    bucket              String?
     type                String
     blurHash            String?
     created             DateTime    @default(now())
+    analyzed            DateTime?
     originalFilename    String
     fileSize             Int
     referenceUrl        String?
     imageWidth          Int?
     imageHeight         Int?
     colorPalette        Json?
-    download            String
+    download            String?
 }
