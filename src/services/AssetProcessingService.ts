@@ -1,5 +1,4 @@
 import {Injectable} from "@tsed/di";
-import {PlatformMulterFile} from "@tsed/common";
 import * as blurhash from "blurhash";
 import sharp from "sharp";
 import getColors from "get-image-colors";
@@ -8,7 +7,7 @@ import {ISizeCalculationResult} from "image-size/dist/types/interface";
 import {FileInfo} from "../interfaces/FileInfo";
 
 @Injectable()
-export class ImageProcessingService {
+export class AssetProcessingService {
     public blurhashFromFile(file: FileInfo): Promise<string> {
         return new Promise((resolve, reject) => {
             sharp(file.buffer)
@@ -35,7 +34,7 @@ export class ImageProcessingService {
         return sizeOf(file.buffer);
     }
 
-    public async generateAssetInput(file: FileInfo, options?: {bucket: string | undefined, uuid: string | undefined, filePath: string | undefined}) : Promise<any> {
+    public async generateAssetInput(file: FileInfo, options?: {bucket?: string | undefined, uuid: string | undefined, filePath?: string | undefined}) : Promise<any> {
         //Image processing for relevant data
         const isImage = file.mimetype.split('/')[0] == "image";
 
@@ -46,15 +45,19 @@ export class ImageProcessingService {
                 originalFilename: file.originalname,
                 fileSize: file.size,
                 created: new Date(),
-                referenceUrl: null, //file upload origin -> when downloaded
+
             }
         };
 
+        if(file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;
+        if(file.analyzed) asset.data['analyzed'] = file.analyzed;
         if(options) {
             asset.data['id'] = options.uuid;
-            asset.data['bucket'] = options.bucket;
-            asset.data['urlPath'] = options.filePath;
-            asset.data['download'] = `http://0.0.0.0:8083/api/asset/${options.uuid}/b`
+            if(options.bucket) {
+                asset.data['bucket'] = options.bucket;
+                asset.data['download'] = `http://0.0.0.0:8083/api/asset/${options.uuid}/b`
+            }
+            if(options.filePath) asset.data['urlPath'] = options.filePath;
         }
 
         if (file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;

@@ -10,16 +10,17 @@ export class AssetFormatterService {
         //Create Object with all necessary keys (they can't be undefined)
         let formattedAsset: FormattedAsset = {
             id: rawAsset.id,
-            urlPath: rawAsset.urlPath,
-            bucket: rawAsset.bucket,
             type: rawAsset.type,
             created: rawAsset.created,
             originalFilename: rawAsset.originalFilename,
             fileSize: bytes(rawAsset.fileSize),
-            download: rawAsset.download,
         };
 
         //Add conditional keys (i.e. image data)
+        if(rawAsset.analyzed) formattedAsset.analyzed = rawAsset.analyzed;
+        if(rawAsset.download) formattedAsset.download = rawAsset.download;
+        if(rawAsset.urlPath) formattedAsset.download = rawAsset.urlPath;
+        if(rawAsset.bucket) formattedAsset.download = rawAsset.bucket;
         if (rawAsset.referenceUrl) formattedAsset.referenceUrl = rawAsset.referenceUrl;
         if (rawAsset.colorPalette &&
             rawAsset.imageWidth &&
