@@ -13,12 +13,15 @@ import {
 import {StoreSet} from "@tsed/core";
 import {AssetService} from "../../services/AssetService";
 import {FormattedAsset} from "../../interfaces/FormattedAsset";
+import {AssetFindService} from "../../services/AssetFindService";
 
 @Controller("/asset")
 export class AssetController {
 
     @Inject()
     protected assetService: AssetService;
+    @Inject()
+    protected assetFindService: AssetFindService;
 
     /**Every GET Request <br>
      * GET every Asset as pageable <br>
@@ -30,20 +33,20 @@ export class AssetController {
     findAll(@QueryParams("page") page: number,
             @QueryParams("pageSize") pageSize: number,
             @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
-        return this.assetService.findAll({pageSize, page, bucket});
+        return this.assetFindService.findAll({pageSize, page, bucket});
     }
 
     @Get("/:id")
     @Summary("Get the meta data of an asset by it's ID")
     findById(@PathParams("id") id: string): Promise<FormattedAsset> {
-        return this.assetService.findById(id);
+        return this.assetFindService.findById(id);
     }
 
     @Get("/:id/b")
     @Summary("Download a file given by an ID")
     async downloadById(@PathParams("id") id: string,
                        @Res() res: PlatformResponse): Promise<Buffer> {
-        return await this.assetService.downloadAsset(id, res);
+        return await this.assetFindService.downloadAsset(id, res);
     }
 
     /**Update an Asset by its ID*/
@@ -54,7 +57,7 @@ export class AssetController {
         return this.assetService.updateById(id, updatedAsset);
     }
 
-    /**Delete an Asset by it's ID*/
+    /**Delete an Asset by its ID*/
     @Delete("/:id")
     @Summary("Delete a file from the bucket together with its meta data")
     deleteById(@PathParams("id") id: string) : Promise<FormattedAsset>  {
@@ -65,22 +68,13 @@ export class AssetController {
     @Summary("Upload file to bucket and save meta data to the database")
     //@UseBefore(JWTAuthorization)
     @StoreSet("dev-asset-bucket-rcktbs", ["bucket1-access"])
-    uploadAsset(@MultipartFile("file") file: PlatformMulterFile,
+    async uploadAsset(@MultipartFile("file") files: PlatformMulterFile[],
                 @QueryParams("bucket") bucket: string
-    ) : Promise<FormattedAsset> {
-        return this.assetService.uploadAsset(file, bucket, true);
-    }
-
-    @Post("/multi/")
-    @Summary("Upload multiple files to bucket and saves it's meta data to the database")
-    async uploadAssets(@MultipartFile("files") files: PlatformMulterFile[],
-                       @QueryParams("bucket") bucket: string
-    ) : Promise<FormattedAsset[]> {
+    ) : Promise<FormattedAsset | FormattedAsset[]> {
         let assets : FormattedAsset[] = [];
-        for(let file of files) assets.push(await this.assetService.uploadAsset(file, bucket, true));
-        return assets;
+        for(let file of files) assets.push(await this.assetService.uploadAsset(file, bucket));
+        return files.length == 1 ? assets[0] : assets;
     }
-
 
     @Post("/batch/:bucket")
     async uploadDownloadedAssets(@BodyParams("urls") urls: string[],
@@ -90,11 +84,15 @@ export class AssetController {
     }
 
     @Post("/analyze-file")
-    analyzeAssetByFile(@MultipartFile("file") file : PlatformMulterFile) {
+    analyzeAssetByFile(@MultipartFile("file") file : PlatformMulterFile) : Promise<FormattedAsset> {
         return this.assetService.analyzeFile(file);
     }
     @Post("/analyze-url")
-    analyzeAssetByUrl(@BodyParams() body : {url: string}) {
+    analyzeAssetByUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
         return this.assetService.analyzeUrl(body.url);
+    }
+    @Post("/analyze-url/save")
+    saveAnalyzedUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+        return this.assetService.saveAnalyzedUrl(body.url);
     }
 }
