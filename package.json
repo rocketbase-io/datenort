@@ -55,6 +55,7 @@
     "file-type": "^16.5.4",
     "get-image-colors": "^4.0.1",
     "image-size": "^1.0.2",
+    "imgproxy": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
     "jwks-rsa": "^3.0.0",
     "method-override": "^3.0.0",
