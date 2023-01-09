@@ -19,8 +19,8 @@ export class AssetFormatterService {
         //Add conditional keys (i.e. image data)
         if(rawAsset.analyzed) formattedAsset.analyzed = rawAsset.analyzed;
         if(rawAsset.download) formattedAsset.download = rawAsset.download;
-        if(rawAsset.urlPath) formattedAsset.download = rawAsset.urlPath;
-        if(rawAsset.bucket) formattedAsset.download = rawAsset.bucket;
+        if(rawAsset.urlPath) formattedAsset.urlPath = rawAsset.urlPath;
+        if(rawAsset.bucket) formattedAsset.bucket = rawAsset.bucket;
         if (rawAsset.referenceUrl) formattedAsset.referenceUrl = rawAsset.referenceUrl;
         if (rawAsset.colorPalette &&
             rawAsset.imageWidth &&
