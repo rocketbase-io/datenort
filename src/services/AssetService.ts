@@ -83,7 +83,7 @@ export class AssetService {
             referenceUrl: file.referenceUrl,
         }
 
-        let asset = await this.processingService.generateAssetInput(assetInfo, {bucket, filePath, uuid});
+        let asset = await this.processingService.generateAssetInput(assetInfo, {bucket: bucket, filePath: filePath, uuid: uuid});
 
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
@@ -104,15 +104,15 @@ export class AssetService {
     }
 
     async analyzeUrl(url: string) : Promise<FormattedAsset> {
-        let assetInfo = await getFileFromUrl(url);
+        let assetInfo = await getFileFromUrl(url).catch(err => { throw new BadRequest(err.message)});
         let asset = await this.processingService.generateAssetInput(assetInfo);
         return this.assetFormatter.format(asset.data);
     }
 
     async saveAnalyzedUrl(url: string) : Promise<FormattedAsset>{
-        let assetInfo = await getFileFromUrl(url);
+        let assetInfo : FileInfo = await getFileFromUrl(url).catch(err => { throw new BadRequest(err.message); });
         assetInfo.analyzed = new Date();
-        return await this.saveFileToDB(assetInfo);
+        return await this.saveFileToDB(assetInfo).catch(err => { throw new BadRequest(err.message); });
     }
 
     //TODO: upadatedAsset type any can cause errors
@@ -135,7 +135,7 @@ export class AssetService {
             throw new BadRequest(err.message);
         });
 
-        await this.awsBucketService.deleteFileFromBucket(rawAsset.bucket, rawAsset.urlPath).catch(err=>{
+        await this.awsBucketService.deleteFileFromBucket(rawAsset.bucket || "", rawAsset.urlPath || "").catch(err=>{
             throw new BadRequest(err.message);
         });
 
