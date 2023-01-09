@@ -21,8 +21,16 @@ export class AssetFindService {
     protected awsBucketService: AwsBucketService;
 
     async downloadAsset(id: string, res: PlatformResponse) : Promise<Buffer> {
-        const asset : any = await this.findById(id);
-        res.attachment(asset.originalFilename);
+        const asset : any = await this.prisma.asset.findUnique({
+            where: {id: id}
+        }).catch(error => {
+            //Most likely caused by 503 -> Couldn't connect to the database
+            throw new Exception(503, error);
+        });
+
+        if(!asset) throw new NotFound("No asset found with id: " + id, "findById()");
+
+        //res.attachment(asset.originalFilename); //whe uncommented download will instantly start
         res.contentType(asset.type);
         return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
             throw new BadRequest(err.message);
