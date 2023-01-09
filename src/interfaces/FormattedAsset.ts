@@ -1,23 +1,36 @@
-export interface FormattedAsset {
-    id: string,
-    urlPath?: string,
-    bucket?: string,
-    type: string,
-    created: Date,
-    originalFilename: string,
-    referenceUrl?: string,
-    analyzed?: Date,
-    fileSize: string,
+import {Property} from "@tsed/schema";
+
+export class FormattedAsset {
+    @Property()
+    id: string;
+    @Property()
+    urlPath?: string;
+    @Property()
+    bucket?: string;
+    @Property()
+    type: string;
+    @Property()
+    created: Date;
+    @Property()
+    originalFilename: string;
+    @Property()
+    referenceUrl?: string;
+    @Property()
+    analyzed?: Date;
+    @Property()
+    fileSize: string;
+    @Property()
     imageData?: {
-        blurHash: string,
+        blurHash: string
         resolution: {
-            width: number,
+            width: number
             height: number
         },
         colorPalette: {
             colors: string[],
             primary: string
         }
-    }
+    };
+    @Property()
     download?: string
 }
