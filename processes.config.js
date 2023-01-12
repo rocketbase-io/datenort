@@ -13,7 +13,7 @@ module.exports = {
       exec_mode: "cluster",
       instances: process.env.NODE_ENV === "test" ? 1 : process.env.NB_INSTANCES || 2,
       autorestart: true,
-      max_memory_restart: process.env.MAX_MEMORY_RESTART || "750M",
+      max_memory_restart: process.env.MAX_MEMORY_RESTART || "1024M",
       'out_file': defaultLogFile,
       'error_file': defaultLogFile,
       'merge_logs': true,
