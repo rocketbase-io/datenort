@@ -7,6 +7,7 @@ import {BadRequest, Exception, NotFound} from "@tsed/exceptions";
 import {FormattedAsset} from "../interfaces/FormattedAsset";
 import {Asset} from "@prisma/client";
 import {AwsBucketService} from "./AwsBucketService";
+import {getBufferFromUrl} from "../utils/utils";
 
 @Injectable()
 @Service()
@@ -32,9 +33,15 @@ export class AssetFindService {
 
         //res.attachment(asset.originalFilename); //whe uncommented download will instantly start
         res.contentType(asset.type);
-        return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
-            throw new BadRequest(err.message);
-        });
+        if(asset.bucket && asset.urlPath)
+            return this.awsBucketService.downloadFileFromBucket(asset.bucket, asset.urlPath).catch(err => {
+                throw new BadRequest(err.message);
+            });
+        else if(asset.referenceUrl && asset.analyzed) {
+            return await getBufferFromUrl(asset.referenceUrl);
+        }else{
+            throw new NotFound("Couldn't find reference for this asset")
+        }
     }
 
     async findById(id: string): Promise<FormattedAsset>  {
@@ -50,11 +57,11 @@ export class AssetFindService {
         return this.assetFormatter.format(rawAsset);
     }
 
-    async findAll(pageOptions: { pageSize: number, page: number, bucket?: string }) : Promise<FormattedAsset[]>{
+    async findAll(pageOptions: { pageSize?: number, page?: number, bucket?: string }) : Promise<FormattedAsset[]>{
 
         //If no argument is given -> search for all with page size 5 on page zero
         let query = {
-            skip: pageOptions.pageSize || 5 * pageOptions.page | 0,
+            skip: (pageOptions.pageSize || 5) * (pageOptions.page || 0),
             take: pageOptions.pageSize || 5,
             where: {}
         }
