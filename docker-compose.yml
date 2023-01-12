@@ -1,6 +1,6 @@
 version: '3.5'
 services:
-  server:
+  datenort:
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -8,7 +8,7 @@ services:
         - http_proxy
         - https_proxy
         - no_proxy
-    image: datenort/server:latest
+    image: rocketbaseio/datenort:latest
     ports:
       - "8081:8081"
 
