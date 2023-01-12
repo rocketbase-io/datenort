@@ -42,8 +42,8 @@ export class AssetController {
     @Get("/")
     @Summary("Get all assets as a pageable. optional: in which bucket")
     @Returns(200, FormattedAsset).Description("Returns an formatted version of an array of assets")
-    findAll(@QueryParams("page") page: number,
-            @QueryParams("pageSize") pageSize: number,
+    findAll(@QueryParams("page") page?: number,
+            @QueryParams("pageSize") pageSize?: number,
             @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
         return this.assetFindService.findAll({pageSize, page, bucket});
     }
