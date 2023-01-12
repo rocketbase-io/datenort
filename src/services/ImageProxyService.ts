@@ -1,9 +1,8 @@
-import {Inject, Injectable, Service} from "@tsed/di";
+import {Injectable, Service} from "@tsed/di";
 import Imgproxy from "imgproxy";
 import {FormattedAsset} from "../interfaces/FormattedAsset";
 import {ValidationError} from "@tsed/common";
-import {GravityType} from "imgproxy/dist/types";
-import {AwsBucketService} from "./AwsBucketService";
+import * as process from "process";
 
 @Injectable()
 @Service()
@@ -11,7 +10,7 @@ export class ImageProxyService {
     private readonly imgproxy : Imgproxy;
     constructor() {
         this.imgproxy = new Imgproxy({
-            baseUrl: 'http://localhost:8080',
+            baseUrl: process.env.IMGPROXY_BASEURL || "http://localhost:8080/",
             key: process.env.IMGPROXY_KEY,
             salt: process.env.IMGPROXY_SALT,
             encode: true
