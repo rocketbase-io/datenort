@@ -48,6 +48,7 @@ export class AssetService {
             analyzed: file.analyzed
         }
 
+
         let asset = await this.processingService.generateAssetInput(assetInfo, {uuid});
 
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
@@ -135,7 +136,7 @@ export class AssetService {
             throw new BadRequest(err.message);
         });
 
-        await this.awsBucketService.deleteFileFromBucket(rawAsset.bucket || "", rawAsset.urlPath || "").catch(err=>{
+        if(rawAsset.bucket) await this.awsBucketService.deleteFileFromBucket(rawAsset.bucket || "", rawAsset.urlPath || "").catch(err=>{
             throw new BadRequest(err.message);
         });
 
