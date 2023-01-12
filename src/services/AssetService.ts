@@ -1,7 +1,7 @@
 import {Inject, Injectable, Service} from "@tsed/di";
 import {PrismaService} from "@tsed/prisma";
 import {BadRequest, Exception, NotFound} from "@tsed/exceptions";
-import {PlatformMulterFile, PlatformResponse, ValidationError} from "@tsed/common";
+import {PlatformMulterFile, ValidationError} from "@tsed/common";
 import {AssetProcessingService} from "./AssetProcessingService";
 import {AwsBucketService} from "./AwsBucketService";
 import {randomUUID} from "crypto";
@@ -9,10 +9,8 @@ import path from "path";
 import {Asset} from "@prisma/client";
 import {AssetFormatterService} from "./AssetFormatterService";
 import {FormattedAsset} from "../interfaces/FormattedAsset";
-import axios from "axios";
-import fileType from "file-type"
 import {FileInfo} from "../interfaces/FileInfo";
-import {getBufferFromUrl, getFileFromUrl} from "../utils/utils";
+import {getFileFromUrl} from "../utils/utils";
 
 @Injectable()
 @Service()
