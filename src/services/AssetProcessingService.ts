@@ -51,11 +51,11 @@ export class AssetProcessingService {
 
         if(file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;
         if(file.analyzed) asset.data['analyzed'] = file.analyzed;
+        if(options?.uuid) asset.data['download'] = `http://0.0.0.0:8083/api/asset/${options.uuid}/b`
         if(options) {
             asset.data['id'] = options.uuid;
             if(options.bucket) {
                 asset.data['bucket'] = options.bucket;
-                asset.data['download'] = `http://0.0.0.0:8083/api/asset/${options.uuid}/b`
             }
             if(options.filePath) asset.data['urlPath'] = options.filePath;
         }
