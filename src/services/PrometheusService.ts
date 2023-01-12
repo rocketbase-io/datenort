@@ -6,7 +6,7 @@ import {collectDefaultMetrics, Registry,} from "prom-client";
 export class PrometheusService {
     public register = new Registry();
     constructor() {
-        this.register.setDefaultLabels({ app: 'example-nodejs-app' })
+        this.register.setDefaultLabels({ app: 'node' })
         collectDefaultMetrics({ register: this.register });
     }
 
