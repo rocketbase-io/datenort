@@ -1,8 +1,7 @@
 import {Controller, Inject} from "@tsed/di";
 import {Delete, Get, Post, Put, Returns, Summary} from "@tsed/schema";
 import {
-    BodyParams, MulterOptions,
-    MultipartFile,
+    BodyParams, MultipartFile,
     PathParams,
     PlatformMulterFile,
     PlatformResponse,
@@ -10,11 +9,11 @@ import {
     Res, UseBefore
 } from "@tsed/common";
 
-import {StoreSet, Type} from "@tsed/core";
+import {StoreSet} from "@tsed/core";
 import {AssetService} from "../../services/AssetService";
 import {FormattedAsset} from "../../interfaces/FormattedAsset";
 import {AssetFindService} from "../../services/AssetFindService";
-import {BadRequest, Exception, Unauthorized} from "@tsed/exceptions";
+import {Exception, Unauthorized} from "@tsed/exceptions";
 import {JWTAuthorization} from "../../middleware/JWTAuthorization";
 import {ImageProxyService} from "../../services/ImageProxyService";
 
