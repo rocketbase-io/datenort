@@ -5,15 +5,42 @@ import * as JWT from "jsonwebtoken";
 import {Unauthorized} from "@tsed/exceptions";
 import {ParsedJwtToken} from "../interfaces/ParsedJwtToken";
 import {ParsedJwtPayload} from "../interfaces/ParsedJwtPayload";
-import {Inject} from "@tsed/di";
-import {JwksService} from "../services/JwksService";
+import {Inject, Injectable, Service} from "@tsed/di";
+import {JwksService} from "./JwksService";
+import {FormattedAsset} from "../interfaces/FormattedAsset";
 
-@Middleware()
+type AuthorizeOptions = {
+    req: Req;
+    asset?: FormattedAsset;
+    bucket?: string;
+}
+
+@Injectable()
+@Service()
 export class JWTAuthorization implements MiddlewareMethods {
 
     //Service injection for caching
     @Inject()
     jwksService: JwksService;
+
+
+
+    authorize({req, asset, bucket}: AuthorizeOptions) : boolean {
+        let authToken = req.headers['authorization'];
+        if(!authToken) throw new Unauthorized("No token found in the request header");
+        authToken = authToken.split(' ')[1];
+        let decodedToken = <ParsedJwtToken>JWT.decode(authToken, {complete: true});
+        const kid = decodedToken.header.kid;
+        this.jwksService.getClient().getSigningKey(kid, (err, key) => {
+            if(err) throw new Unauthorized(err.message);
+            const signingKey = key?.getPublicKey();
+            JWT.verify(authToken || "", signingKey || "", (err : any, user : ParsedJwtPayload) => {
+                if(err) throw new Unauthorized(err.message);
+            })
+        })
+
+        return true;
+    }
 
     use(@Context() $ctx: Context, @Req() $req: Req, @Next() next: NextFunction) {
         let authToken : any;

@@ -5,17 +5,16 @@ import {
     PathParams,
     PlatformMulterFile,
     PlatformResponse,
-    QueryParams,
-    Res, UseBefore
+    QueryParams, Req,
+    Res
 } from "@tsed/common";
 
-import {StoreSet} from "@tsed/core";
 import {AssetService} from "../../services/AssetService";
 import {FormattedAsset} from "../../interfaces/FormattedAsset";
 import {AssetFindService} from "../../services/AssetFindService";
 import {Exception, Unauthorized} from "@tsed/exceptions";
-import {JWTAuthorization} from "../../middleware/JWTAuthorization";
 import {ImageProxyService} from "../../services/ImageProxyService";
+import {JWTAuthorization} from "../../services/JWTAuthorization";
 
 @Controller("/asset")
 export class AssetController {
@@ -26,6 +25,8 @@ export class AssetController {
     protected assetFindService: AssetFindService;
     @Inject()
     protected imageProxyService : ImageProxyService;
+    @Inject()
+    protected jwkService : JWTAuthorization;
 
     @Get("/resize/:id")
     async resizeAsset(@PathParams("id") id: string) : Promise<any> {
@@ -41,10 +42,13 @@ export class AssetController {
     @Get("/")
     @Summary("Get all assets as a pageable. optional: in which bucket")
     @Returns(200, FormattedAsset).Description("Returns an formatted version of an array of assets")
-    findAll(@QueryParams("page") page?: number,
-            @QueryParams("pageSize") pageSize?: number,
-            @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
-        return this.assetFindService.findAll({pageSize, page, bucket});
+    findAll(req: Req,
+             @QueryParams("page") page?: number,
+             @QueryParams("pageSize") pageSize?: number,
+             @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
+        let asset = this.assetFindService.findAll({pageSize, page, bucket});
+        this.jwkService.authorize({req, bucket});
+        return asset;
     }
 
     @Get("/:id")
@@ -77,8 +81,6 @@ export class AssetController {
     }
 
     @Post("/")
-    @UseBefore(JWTAuthorization)
-    @StoreSet("dev-asset-bucket-rcktbs", ["bucket1-access"])
     @Summary("Upload file to bucket and save meta data to the database")
     @Returns(200, FormattedAsset).Description("Formatted Asset")
     @Returns(401, Unauthorized).Description("If JWT Token isn't valid for the bucket")
@@ -104,18 +106,21 @@ export class AssetController {
     @Summary("No saving or upload. Just analyzing file")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     analyzeAssetByFile(@MultipartFile("file") file : PlatformMulterFile) : Promise<FormattedAsset> {
+        //no access needed
         return this.assetService.analyzeFile(file);
     }
     @Post("/analyze-url")
     @Summary("No saving or upload. Just analyzing downloaded url")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     analyzeAssetByUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+        //no access needed
         return this.assetService.analyzeUrl(body.url);
     }
     @Post("/analyze-url/save")
     @Summary("Save a file to the database + adding analyzed time")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     saveAnalyzedUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+        //Doesnt need bucket... all access?
         return this.assetService.saveAnalyzedUrl(body.url);
     }
 }
