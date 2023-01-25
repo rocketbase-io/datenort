@@ -42,12 +42,12 @@ export class AssetController {
     @Get("/")
     @Summary("Get all assets as a pageable. optional: in which bucket")
     @Returns(200, FormattedAsset).Description("Returns an formatted version of an array of assets")
-    findAll(req: Req,
-             @QueryParams("page") page?: number,
-             @QueryParams("pageSize") pageSize?: number,
-             @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
+    async findAll(@Req() req: Req,
+            @QueryParams("page") page?: number,
+            @QueryParams("pageSize") pageSize?: number,
+            @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
         let asset = this.assetFindService.findAll({pageSize, page, bucket});
-        this.jwkService.authorize({req, bucket});
+        await this.jwkService.authorize({req, bucket}).catch((err) => {throw err});
         return asset;
     }
 
