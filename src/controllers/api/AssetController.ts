@@ -46,6 +46,7 @@ export class AssetController {
             @QueryParams("page") page?: number,
             @QueryParams("pageSize") pageSize?: number,
             @QueryParams("bucket") bucket?: string) : Promise<FormattedAsset[]> {
+        //Check authorization for bucket in query
         let asset = this.assetFindService.findAll({pageSize, page, bucket});
         await this.jwkService.authorize({req, bucket}).catch((err) => {throw err});
         return asset;
@@ -53,8 +54,12 @@ export class AssetController {
 
     @Get("/:id")
     @Summary("Get the meta data of an asset by it's ID")
-    findById(@PathParams("id") id: string): Promise<FormattedAsset> {
-        return this.assetFindService.findById(id);
+    async findById(@Req() req: Req,
+             @PathParams("id") id: string): Promise<FormattedAsset> {
+        //Check authorization for found asset with bucket
+        let asset = await this.assetFindService.findById(id);
+        if(asset.bucket) await this.jwkService.authorize({req, bucket: asset.bucket})
+        return asset;
     }
 
     @Get("/:id/b")
