@@ -1,12 +1,15 @@
 import {Controller, Inject} from "@tsed/di";
 import {Delete, Get, Post, Put, Returns, Summary} from "@tsed/schema";
 import {
-    BodyParams, MultipartFile,
+    BodyParams,
+    MultipartFile,
     PathParams,
     PlatformMulterFile,
     PlatformResponse,
-    QueryParams, Req,
-    Res, UseBefore
+    QueryParams,
+    Req,
+    Res,
+    UseBefore
 } from "@tsed/common";
 
 import {AssetService} from "../../services/AssetService";
