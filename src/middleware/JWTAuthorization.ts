@@ -1,19 +1,11 @@
-import {Context, Middleware, MiddlewareMethods, Next, Req} from "@tsed/common";
+import {Middleware, Next, Req} from "@tsed/common";
 import {NextFunction} from "express";
 import * as JWT from "jsonwebtoken";
 
 import {Unauthorized} from "@tsed/exceptions";
 import {ParsedJwtToken} from "../interfaces/ParsedJwtToken";
-import {ParsedJwtPayload} from "../interfaces/ParsedJwtPayload";
-import {Inject, Injectable, Service} from "@tsed/di";
+import {Inject} from "@tsed/di";
 import {JwksService} from "../services/JwksService";
-import {FormattedAsset} from "../interfaces/FormattedAsset";
-
-type AuthorizeOptions = {
-    req: Req;
-    asset?: FormattedAsset;
-    bucket?: string;
-}
 
 @Middleware()
 export class JWTAuthorization {
@@ -33,7 +25,7 @@ export class JWTAuthorization {
         this.jwksService.getClient().getSigningKey(kid, (error, key) => {
             if (error) return next(new Unauthorized(error.message));
             const signingKey = key?.getPublicKey();
-            JWT.verify(authToken, signingKey|| "", (err : any, user : ParsedJwtPayload ) => {
+            JWT.verify(authToken, signingKey|| "", (err : any) => {
                 if (err) return next(new Unauthorized(err.message));
                 return next();
             });
