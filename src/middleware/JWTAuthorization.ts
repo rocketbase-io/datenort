@@ -20,6 +20,8 @@ export class JWTAuthorization {
         if(!authToken) return next(new Unauthorized("No token found in the request header"));
         //Auth token starts by default with Bearer. This has to be removed.
         authToken = authToken.split(' ')[1];
+        if(!authToken) return next(new Unauthorized("No token found in the request header"));
+
         let decodedToken = <ParsedJwtToken>JWT.decode(authToken, {complete: true});
         const kid = decodedToken.header.kid;
         this.jwksService.getClient().getSigningKey(kid, (error, key) => {

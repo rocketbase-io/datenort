@@ -32,6 +32,7 @@ export class AssetController {
     protected jwkService : JWTAuthorization;
 
     @Get("/resize/:id")
+    @UseBefore(JWTAuthorization)
     async resizeAsset(@PathParams("id") id: string) : Promise<any> {
         let asset = await this.assetFindService.findById(id)
         return this.imageProxyService.resizeAsset(asset);
