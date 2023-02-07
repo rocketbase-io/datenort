@@ -36,7 +36,6 @@ COPY --from=build /opt .
 
 RUN npm install
 COPY ./prisma ./prisma
-COPY .env ./
 RUN npm run prisma:migrate
 RUN npm run build
 COPY processes.config.js .
