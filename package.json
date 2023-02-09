@@ -10,7 +10,6 @@
     "test": "npm run test:lint && npm run test:coverage",
     "test:unit": "cross-env NODE_ENV=test jest",
     "test:coverage": "npm run test:unit",
-    "prisma:migrate": "npx prisma migrate dev --name init",
     "prisma:generate": "npx prisma generate",
     "prisma:all": "npx prisma generate && npx prisma migrate dev --name init"
   },

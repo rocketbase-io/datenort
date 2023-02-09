@@ -14,30 +14,31 @@
 ##                                                                           ##
 ###############################################################################
 ###############################################################################
-ARG NODE_VERSION=16.13.1
+ARG NODE_VERSION=16
 
-FROM node:${NODE_VERSION}-alpine as build
+FROM node:16-slim as build
 WORKDIR /opt
 
 COPY package.json package-lock.json tsconfig.json tsconfig.compile.json .barrelsby.json ./
 
-RUN npm ci
+RUN npm install
 
 COPY ./src ./src
 
-FROM node:${NODE_VERSION}-alpine as runtime
+FROM node:16-slim as runtime
 ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
-RUN apk update && apk add build-base git curl
+RUN apt-get update
+RUN apt-get install -y git curl build-essential openssl
+
 RUN npm install -g pm2
 
 COPY --from=build /opt .
 
 RUN npm install
 COPY ./prisma ./prisma
-COPY .env ./
-RUN npm run prisma:migrate
+RUN npm run prisma:generate
 RUN npm run build
 COPY processes.config.js .
 

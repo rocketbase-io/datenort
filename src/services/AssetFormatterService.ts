@@ -6,7 +6,9 @@ import bytes from "bytes";
 @Injectable()
 @Service()
 export class AssetFormatterService {
-    format(rawAsset: Asset): FormattedAsset {
+    private readonly _errorKey = "undefined"; //Use this for undefined values
+
+    public format(rawAsset: Asset): FormattedAsset {
         //Create Object with all necessary keys (they can't be undefined)
         let formattedAsset: FormattedAsset = {
             id: rawAsset.id,
@@ -28,12 +30,12 @@ export class AssetFormatterService {
             //Adding image data
 
             formattedAsset.imageData = {
-                blurHash: rawAsset.blurHash || "undefined",
+                blurHash: rawAsset.blurHash || this._errorKey,
                 colorPalette: {
                     // @ts-ignore
-                    primary: rawAsset.colorPalette.primary || undefined,
+                    primary: rawAsset.colorPalette.primary || this._errorKey,
                     // @ts-ignore
-                    colors: rawAsset.colorPalette.colors || undefined
+                    colors: rawAsset.colorPalette.colors || this._errorKey
                 },
                 resolution: {
                     width: rawAsset.imageWidth,
