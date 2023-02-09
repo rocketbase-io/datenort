@@ -29,7 +29,7 @@ FROM node:${NODE_VERSION}-alpine as runtime
 ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
-RUN apk update && apk add build-base git curl openssl libssl-dev
+RUN apk update && apk add build-base git curl openssl
 RUN npm install -g pm2
 
 COPY --from=build /opt .
