@@ -1,12 +1,14 @@
 global:
-  scrape_interval: 1m
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: "prometheus"
-    scrape_interval: 1m
+  - job_name: 'api'
+    scrape_interval: 5s
     static_configs:
-      - targets: ["docker.for.mac.host.internal:8083"]
-
-  - job_name: "node"
+      - targets: [ 'docker.for.mac.host.internal:8083' ]
+    metrics_path: /metrics
+  - job_name: 'node'
+    scrape_interval: 5s
     static_configs:
-      - targets: ["docker.for.mac.host.internal:9100"]
+      - targets: ['node-exporter:9100']
