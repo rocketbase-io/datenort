@@ -14,7 +14,7 @@
 ##                                                                           ##
 ###############################################################################
 ###############################################################################
-ARG NODE_VERSION=16.13.1
+ARG NODE_VERSION=17.4.0
 
 FROM node:${NODE_VERSION}-alpine as build
 WORKDIR /opt
@@ -30,6 +30,7 @@ ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
 RUN apk update && apk add build-base git curl openssl
+RUN apk add libressl-dev
 RUN npm install -g pm2
 
 COPY --from=build /opt .
