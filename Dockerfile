@@ -30,7 +30,7 @@ ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
 RUN apt-get update
-RUN apt-get install -y git curl build-base openssl
+RUN apt-get install -y git curl build-essential openssl
 
 RUN npm install -g pm2
 
