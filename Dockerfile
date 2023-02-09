@@ -14,9 +14,9 @@
 ##                                                                           ##
 ###############################################################################
 ###############################################################################
-ARG NODE_VERSION=17.4.0
+ARG NODE_VERSION=16.13.1
 
-FROM node:${NODE_VERSION}-alpine as build
+FROM node:${NODE_VERSION}-alpine3.16 as build
 WORKDIR /opt
 
 COPY package.json package-lock.json tsconfig.json tsconfig.compile.json .barrelsby.json ./
@@ -31,6 +31,7 @@ WORKDIR $WORKDIR
 
 RUN apk update && apk add build-base git curl openssl
 RUN apk add libressl-dev
+RUN apk add openssl1.1-compat
 RUN npm install -g pm2
 
 COPY --from=build /opt .
