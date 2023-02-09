@@ -16,7 +16,7 @@
 ###############################################################################
 ARG NODE_VERSION=16
 
-FROM node:${NODE_VERSION}-alpine3.16 as build
+FROM node:16-slim as build
 WORKDIR /opt
 
 COPY package.json package-lock.json tsconfig.json tsconfig.compile.json .barrelsby.json ./
@@ -25,13 +25,13 @@ RUN npm install
 
 COPY ./src ./src
 
-FROM node:${NODE_VERSION}-alpine as runtime
+FROM node:16-slim as runtime
 ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
-RUN apk update && apk add build-base git curl openssl
-RUN apk add libressl-dev
-RUN apk add openssl1.1-compat
+RUN apt-get update
+RUN apt-get install -y git curl build-base openssl
+
 RUN npm install -g pm2
 
 COPY --from=build /opt .
