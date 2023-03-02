@@ -53,7 +53,6 @@ create table asset (
     image_width integer,
     image_height integer,
     color_palette jsonb,
-    download text,
 
     constraint asset_pkey primary key (id)
 );
