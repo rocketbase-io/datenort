@@ -15,12 +15,13 @@ export class AssetFormatterService {
             type: rawAsset.type,
             created: rawAsset.created,
             originalFilename: rawAsset.originalFilename,
-            fileSize: bytes(rawAsset.fileSize),
+            fileSize: rawAsset.fileSize,
+            fileSizeHumanReadable: bytes(rawAsset.fileSize),
         };
 
         //Add conditional keys (i.e. image data)
         if(rawAsset.analyzed) formattedAsset.analyzed = rawAsset.analyzed;
-        if(rawAsset.download) formattedAsset.download = rawAsset.download;
+        // todo: formattedAsset.download means in case of s3 file the bucket signed download url / otherwise referenceURL when not stored?
         if(rawAsset.urlPath) formattedAsset.urlPath = rawAsset.urlPath;
         if(rawAsset.bucket) formattedAsset.bucket = rawAsset.bucket;
         if (rawAsset.referenceUrl) formattedAsset.referenceUrl = rawAsset.referenceUrl;

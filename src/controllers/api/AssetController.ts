@@ -15,7 +15,7 @@ import {
 import {AssetService} from "../../services/AssetService";
 import {FormattedAsset} from "../../interfaces/FormattedAsset";
 import {AssetFindService} from "../../services/AssetFindService";
-import {Exception, Unauthorized} from "@tsed/exceptions";
+import {BadRequest, Exception, Unauthorized} from "@tsed/exceptions";
 import {ImageProxyService} from "../../services/ImageProxyService";
 import {JWTAuthorization} from "../../middleware/JWTAuthorization";
 
@@ -128,14 +128,20 @@ export class AssetController {
     @UseBefore(JWTAuthorization)
     analyzeAssetByUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
         //no access needed
+        if (!body.url) {
+            throw new BadRequest("url is required");
+        }
         return this.assetService.analyzeUrl(body.url);
     }
     @Post("/analyze-url/save")
     @Summary("Save a file to the database + adding analyzed time")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     @UseBefore(JWTAuthorization)
-    saveAnalyzedUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+    saveAnalyzedUrl(@BodyParams() body : {url: string}, @QueryParams("cache") cache: boolean = true) : Promise<FormattedAsset> {
         //Doesnt need bucket... all access?
-        return this.assetService.saveAnalyzedUrl(body.url);
+        if (!body.url) {
+            throw new BadRequest("url is required");
+        }
+        return this.assetService.saveAnalyzedUrl(body.url, cache);
     }
 }

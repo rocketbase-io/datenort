@@ -18,7 +18,9 @@ export class FormattedAsset {
     @Property()
     analyzed?: Date;
     @Property()
-    fileSize: string;
+    fileSize: number;
+    @Property()
+    fileSizeHumanReadable: string;
     @Property()
     imageData?: {
         blurHash: string

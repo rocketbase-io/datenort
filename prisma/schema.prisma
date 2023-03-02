@@ -15,18 +15,19 @@ generator tsed {
 }
 
 model Asset {
-    id                  String  @id @default(uuid())
-    urlPath             String?
-    bucket              String?
-    type                String
-    blurHash            String?
-    created             DateTime    @default(now())
-    analyzed            DateTime?
-    originalFilename    String
-    fileSize             Int
-    referenceUrl        String?
-    imageWidth          Int?
-    imageHeight         Int?
-    colorPalette        Json?
-    download            String?
+ @@map("asset")
+
+    id                  String      @id @db.Uuid @default(uuid())
+    urlPath             String?     @map("url_path")
+    bucket              String?     @db.VarChar(100)
+    type                String      @db.VarChar(128)
+    blurHash            String?     @db.VarChar(100)    @map("blur_hash")
+    created             DateTime    @default(now())     @db.Timestamptz
+    analyzed            DateTime?   @db.Timestamptz
+    originalFilename    String      @map("original_filename")
+    fileSize             Int        @map("file_size")
+    referenceUrl        String?     @map("reference_url")
+    imageWidth          Int?        @map("image_width")
+    imageHeight         Int?        @map("image_height")
+    colorPalette        Json?       @map("color_palette")
 }

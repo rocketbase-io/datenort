@@ -29,7 +29,7 @@ export class AssetProcessingService {
             })
         })
     }
-    
+
     public imageSizeFromFile(file: FileInfo) : ISizeCalculationResult {
         return sizeOf(file.buffer);
     }
@@ -51,7 +51,6 @@ export class AssetProcessingService {
 
         if(file.referenceUrl) asset.data['referenceUrl'] = file.referenceUrl;
         if(file.analyzed) asset.data['analyzed'] = file.analyzed;
-        if(options?.uuid) asset.data['download'] = `http://0.0.0.0:8083/api/asset/${options.uuid}/b`
         if(options) {
             asset.data['id'] = options.uuid;
             if(options.bucket) {

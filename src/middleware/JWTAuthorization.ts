@@ -14,6 +14,10 @@ export class JWTAuthorization {
     @Inject()
     jwksService: JwksService;
     use(@Req() $req: Req, @Next() next: NextFunction) {
+        if (!this.jwksService.enabled) {
+            return next();
+        }
+
         let authToken : any;
         authToken = $req.headers['authorization'];
         //Check for missing authToken..
@@ -24,7 +28,7 @@ export class JWTAuthorization {
 
         let decodedToken = <ParsedJwtToken>JWT.decode(authToken, {complete: true});
         const kid = decodedToken.header.kid;
-        this.jwksService.getClient().getSigningKey(kid, (error, key) => {
+        this.jwksService.jwksClient.getSigningKey(kid, (error, key) => {
             if (error) return next(new Unauthorized(error.message));
             const signingKey = key?.getPublicKey();
             JWT.verify(authToken, signingKey|| "", (err : any) => {

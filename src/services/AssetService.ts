@@ -87,7 +87,7 @@ export class AssetService {
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
         });
-        
+
         return this.assetFormatter.format(rawAsset);
     }
 
@@ -108,7 +108,13 @@ export class AssetService {
         return this.assetFormatter.format(asset.data);
     }
 
-    async saveAnalyzedUrl(url: string) : Promise<FormattedAsset>{
+    async saveAnalyzedUrl(url: string, cache: boolean) : Promise<FormattedAsset>{
+        if (cache) {
+            let cacheValue = await this.prisma.asset.findFirst({where: {referenceUrl: url}});
+            if (cacheValue) {
+                return this.assetFormatter.format(cacheValue)
+            }
+        }
         let assetInfo : FileInfo = await getFileFromUrl(url).catch(err => { throw new BadRequest(err.message); });
         assetInfo.analyzed = new Date();
         return await this.saveFileToDB(assetInfo).catch(err => { throw new BadRequest(err.message); });

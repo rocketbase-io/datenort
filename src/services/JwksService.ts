@@ -5,18 +5,18 @@ import * as JWKS from "jwks-rsa";
 @Injectable()
 @Service() //Used for one time constructor (enables caching)
 export class JwksService {
-    private readonly jwksClient: JwksClient;
+    public readonly jwksClient: JwksClient;
+    public readonly enabled: boolean;
 
     constructor() {
-        this.jwksClient = new JWKS.JwksClient({
-            cache: true,
-            cacheMaxEntries: 5,
-            cacheMaxAge: 600000,
-            jwksUri: process.env.TOKEN_AUTHORIZATION_URL || "http://fallback.example/"
-        });
-    }
-
-    public getClient() {
-        return this.jwksClient;
+        this.enabled = "TOKEN_AUTHORIZATION_URL" in process.env;
+        if (this.enabled) {
+            this.jwksClient = new JWKS.JwksClient({
+                cache: true,
+                cacheMaxEntries: 5,
+                cacheMaxAge: 600000,
+                jwksUri: process.env.TOKEN_AUTHORIZATION_URL!
+            });
+        }
     }
 }

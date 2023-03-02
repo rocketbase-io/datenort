@@ -13,20 +13,18 @@ export async function getBufferFromUrl(url: string) : Promise<Buffer> {
     })
 }
 
-export async function getFileFromUrl(url: string) {
-    let fileBuffer = await getBufferFromUrl(url);
-    let fileName = url.split('/').filter(s=> s != "").reverse()[0];
-    let mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
-    let fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
+export async function getFileFromUrl(url: string): Promise<FileInfo> {
+    const fileBuffer = await getBufferFromUrl(url);
+    const fileName = url.split('/').filter(s=> s != "").reverse()[0];
+    const fileExt = (await fileType.fromBuffer(fileBuffer))?.ext;
+    const mimeType = (await fileType.fromBuffer(fileBuffer))?.mime;
     if(!mimeType) throw new ValidationError("File type of downloaded url couldn't be determined", ["url: " + url]);
 
-    let fileInfo : FileInfo = {
+    return  {
         buffer: fileBuffer,
         size: fileBuffer.toString().length,
         mimetype: mimeType,
-        originalname: `${fileName}.${fileExt}`,
+        originalname: `${fileName.endsWith(fileExt??'') ? fileName : (fileName+'.'+fileExt)}`,
         referenceUrl: url
     };
-
-    return fileInfo;
 }
