@@ -34,6 +34,31 @@ docker compose build
 docker compose up
 ```
 
+## Datamodel
+
+Structure is not getting generated automatically. Please create it by your own. Currently build for PostgreSQL.
+
+```sql
+create table asset (
+    id uuid not null,
+    url_path text,
+    bucket varchar(100),
+    type varchar(128) not null,
+    blur_hash varchar(100),
+    created timestamptz not null default current_timestamp,
+    analyzed timestamptz,
+    original_filename text not null,
+    file_size integer not null,
+    reference_url text,
+    image_width integer,
+    image_height integer,
+    color_palette jsonb,
+    download text,
+
+    constraint asset_pkey primary key (id)
+);
+```
+
 ## Configuring the Server
 
 
