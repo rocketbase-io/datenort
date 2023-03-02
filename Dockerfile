@@ -14,9 +14,9 @@
 ##                                                                           ##
 ###############################################################################
 ###############################################################################
-ARG NODE_VERSION=16
+ARG NODE_VERSION=18
 
-FROM node:16-slim as build
+FROM node:18-slim as build
 WORKDIR /opt
 
 COPY package.json package-lock.json tsconfig.json tsconfig.compile.json .barrelsby.json ./
@@ -25,7 +25,7 @@ RUN npm install
 
 COPY ./src ./src
 
-FROM node:16-slim as runtime
+FROM node:18-slim as runtime
 ENV WORKDIR /opt
 WORKDIR $WORKDIR
 
