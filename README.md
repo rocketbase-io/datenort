@@ -1,6 +1,10 @@
 # Datenort
 
-<h3 align="center">a file management api</h3>
+![logo](./assets/datenort.png)
+
+
+![build](https://github.com/rocketbase-io/datenort/actions/workflows/test_ci.yml/badge.svg)
+![docker](https://badgen.net/docker/pulls/rocketbaseio/datenort)
 
 ## Features
 
