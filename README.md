@@ -27,7 +27,7 @@ $  npm run start:prod
 ## Running as a Docker
 
 ```
-docker run it -p 8081:8081 rocketbaseio/datenort:latest
+docker run -it -p 8081:8081 rocketbaseio/datenort:latest
 ```
 
 ## Datamodel

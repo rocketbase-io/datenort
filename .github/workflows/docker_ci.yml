@@ -1,15 +1,21 @@
-name: DEV CI Docker Image
+name: docker-ci
 
 on:
-  push:
-    branches:
-      'dev'
+  workflow_dispatch:
+    inputs:
+      releaseversion:
+        description: 'Release version'
+        required: true
+        default: '1.0.0'
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - run: |
+          echo "Release version ${{ github.event.inputs.releaseversion }}!"
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -32,4 +38,17 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: rocketbaseio/datenort:latest
+          tags: rocketbaseio/datenort:latest,rocketbaseio/datenort:${{ github.event.inputs.releaseversion }}
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.releaseversion }}
+          release_name: ${{ github.event.inputs.releaseversion }}
+          body: |
+            New version ${{ github.event.inputs.releaseversion }} published
+          draft: false
+          prerelease: false
