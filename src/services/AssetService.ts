@@ -58,7 +58,7 @@ export class AssetService {
 
     async uploadAsset(file: PlatformMulterFile | any, bucket: string): Promise<FormattedAsset>  {
         if (!file) throw new ValidationError("No file found");
-        const uuid = randomUUID();
+        const uuid : string = randomUUID();
 
         let folderPath = uuid;
         folderPath = folderPath.substring(32, 36); //Get last for characters
