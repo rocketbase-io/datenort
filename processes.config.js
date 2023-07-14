@@ -11,7 +11,7 @@ module.exports = {
       'cwd': process.env.WORKDIR,
       node_args: process.env.NODE_ARGS || "--max_old_space_size=1800",
       exec_mode: "cluster",
-      instances: process.env.NODE_ENV === "test" ? 1 : process.env.NB_INSTANCES || 2,
+      instances: 1 || process.env.NB_INSTANCES,
       autorestart: true,
       max_memory_restart: process.env.MAX_MEMORY_RESTART || "1024M",
       'out_file': defaultLogFile,
