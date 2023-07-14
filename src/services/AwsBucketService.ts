@@ -31,7 +31,7 @@ export class AwsBucketService {
         }
     };
 
-    async downloadFileFromBucket(bucket: string, filePath: string) : Promise<any> {
+    public async downloadFileFromBucket(bucket: string, filePath: string) : Promise<any> {
         return new Promise((resolve, reject) => {
             this.s3.getObject({Bucket: bucket, Key: filePath}, (err, data) => {
                 if(err) reject(err);
@@ -41,14 +41,14 @@ export class AwsBucketService {
         });
     }
 
-    async deleteFileFromBucket(bucket: string, filePath: string) : Promise<any> {
+    public async deleteFileFromBucket(bucket: string, filePath: string) : Promise<any> {
         return await this.s3.deleteObject({Bucket: bucket, Key: filePath}, (err, data) => {
             if(err) throw new Exception(400, err.message);
             return data;
         }).promise();
     }
 
-    async uploadFileToBucket(bucket: string, file: PlatformMulterFile, filePath: string) {
+    public async uploadFileToBucket(bucket: string, file: PlatformMulterFile, filePath: string) {
 
         await this.checkValidBucket(bucket).catch(error => {
             throw error;
