@@ -67,7 +67,11 @@ export class AssetController {
     @Get("/:id/b")
     @Summary("Download a file given by an ID")
     @Returns(200, Buffer).Description("Returns an formatted version of an array of assets")
-    @UseBefore(JWTAuthorization)
+    //@UseBefore(JWTAuthorization)
+    /**
+     * We can't use authorization here just yet, because productspace doesn't handle token authorization,
+     * when an image is used as src in an img tag. So we have to allow anonymous access to the image.
+     */
     async downloadById(@PathParams("id") id: string,
                        @Res() res: PlatformResponse): Promise<Buffer> {
         return await this.assetFindService.downloadAsset(id, res);
