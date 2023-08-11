@@ -24,7 +24,7 @@ export class AssetFindService {
     async downloadAsset(id: string, res: PlatformResponse) : Promise<Buffer> {
         const asset : any = await this.prisma.asset.findUnique({
             where: {id: id}
-        }).catch(error => {
+        }).catch((error : any) => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         });
@@ -48,7 +48,7 @@ export class AssetFindService {
 
         let rawAsset: Asset | null = await this.prisma.asset.findUnique({
             where: {id: id}
-        }).catch(error => {
+        }).catch((error : any) => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         });
@@ -68,7 +68,7 @@ export class AssetFindService {
 
         if (pageOptions.bucket) query.where = {bucket: pageOptions.bucket};
 
-        let rawAssets = await this.prisma.asset.findMany(query).catch(error => {
+        let rawAssets = await this.prisma.asset.findMany(query).catch((error : any) => {
             //Most likely caused by 503 -> Couldn't connect to the database
             throw new Exception(503, error);
         });
