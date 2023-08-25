@@ -18,6 +18,8 @@ export class FormattedAsset {
     @Property()
     analyzed?: Date;
     @Property()
+    author?: string;
+    @Property()
     fileSize: number;
     @Property()
     fileSizeHumanReadable: string;

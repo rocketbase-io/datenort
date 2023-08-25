@@ -18,6 +18,9 @@ import {AssetFindService} from "../../services/AssetFindService";
 import {BadRequest, Exception, Unauthorized} from "@tsed/exceptions";
 import {ImageProxyService} from "../../services/ImageProxyService";
 import {JWTAuthorization} from "../../middleware/JWTAuthorization";
+import axios from "axios";
+import { ResizeSize, ResizedPreviews } from "src/interfaces/ResizedPreviews";
+
 
 @Controller("/asset")
 export class AssetController {
@@ -31,11 +34,28 @@ export class AssetController {
     @Inject()
     protected jwkService : JWTAuthorization;
 
-    @Get("/resize/:id")
+    @Get("/resize/:id/")
     @UseBefore(JWTAuthorization)
-    async resizeAsset(@PathParams("id") id: string) : Promise<any> {
+    async resizeAsset(@PathParams("id") id: string) : Promise<ResizedPreviews> {
         let asset = await this.assetFindService.findById(id)
         return this.imageProxyService.resizeAsset(asset);
+    }
+
+
+
+    @Get("/resize/:id/:size")
+    @UseBefore(JWTAuthorization)
+    async proxyResizedAsset(@Res() res: Res, @PathParams("id") id: string, @PathParams("size") size: ResizeSize) : Promise<any> {
+        let resizedPreviewUrl : string = (await this.resizeAsset(id)).previews[size];
+
+        const response = await axios.get(resizedPreviewUrl, {
+            responseType: "stream"
+        });
+
+        res.set(response.headers);
+        res.status(response.status);
+
+        return response.data;
     }
 
     /**Every GET Request <br>
@@ -69,7 +89,7 @@ export class AssetController {
     @Returns(200, Buffer).Description("Returns an formatted version of an array of assets")
     //@UseBefore(JWTAuthorization)
     /**
-     * We can't use authorization here just yet, because productspace doesn't handle token authorization,
+     * We can't use authorization here just yet, because productspace doesn't handle tokens authorization,
      * when an image is used as src in an img tag. So we have to allow anonymous access to the image.
      */
     async downloadById(@PathParams("id") id: string,

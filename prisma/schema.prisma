@@ -24,8 +24,9 @@ model Asset {
     blurHash            String?     @db.VarChar(100)    @map("blur_hash")
     created             DateTime    @default(now())     @db.Timestamptz
     analyzed            DateTime?   @db.Timestamptz
+    author              String?     @db.VarChar(100)
     originalFilename    String      @map("original_filename")
-    fileSize             Int        @map("file_size")
+    fileSize            Int         @map("file_size")
     referenceUrl        String?     @map("reference_url")
     imageWidth          Int?        @map("image_width")
     imageHeight         Int?        @map("image_height")
