@@ -24,17 +24,17 @@ export class AssetService {
     @Inject()
     protected awsBucketService: AwsBucketService;
 
-    async batchUpload(urls: string[], bucket: string) : Promise<FormattedAsset[]> {
+    async batchUpload(urls: string[], bucket: string, author?: string) : Promise<FormattedAsset[]> {
         let assets : FormattedAsset[] = [];
         for (let url of urls) {
             let fileInfo = await getFileFromUrl(url);
             fileInfo.analyzed = new Date();
-            assets.push(await this.uploadAsset(fileInfo, bucket));
+            assets.push(await this.uploadAsset(fileInfo, bucket, author));
         }
         return assets;
     }
 
-    async saveFileToDB(file: FileInfo) {
+    async saveFileToDB(file: FileInfo, author?: string) : Promise<FormattedAsset> {
         if (!file) throw new ValidationError("No file found");
         const uuid = randomUUID();
         let assetInfo: FileInfo = {
@@ -47,7 +47,7 @@ export class AssetService {
         }
 
 
-        let asset = await this.processingService.generateAssetInput(assetInfo, {uuid});
+        let asset = await this.processingService.generateAssetInput(assetInfo, {uuid, author});
 
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
@@ -56,7 +56,7 @@ export class AssetService {
         return this.assetFormatter.format(rawAsset);
     }
 
-    async uploadAsset(file: PlatformMulterFile | any, bucket: string): Promise<FormattedAsset>  {
+    async uploadAsset(file: PlatformMulterFile | any, bucket: string, author?: string): Promise<FormattedAsset>  {
         if (!file) throw new ValidationError("No file found");
         const uuid : string = randomUUID();
 
@@ -82,7 +82,7 @@ export class AssetService {
             referenceUrl: file.referenceUrl,
         }
 
-        let asset = await this.processingService.generateAssetInput(assetInfo, {bucket: bucket, filePath: filePath, uuid: uuid});
+        let asset = await this.processingService.generateAssetInput(assetInfo, {bucket: bucket, filePath: filePath, uuid: uuid, author});
 
         let rawAsset = await this.prisma.asset.create(asset).catch(err => {
             throw new Exception(400, err);
@@ -91,24 +91,24 @@ export class AssetService {
         return this.assetFormatter.format(rawAsset);
     }
 
-    async analyzeFile(file: FileInfo) : Promise<FormattedAsset> {
+    async analyzeFile(file: FileInfo, author?: string) : Promise<FormattedAsset> {
         let assetInfo: FileInfo = {
             buffer: file.buffer,
             mimetype: file.mimetype,
             originalname: file.originalname,
             size: file.size
         }
-        let asset = await this.processingService.generateAssetInput(assetInfo);
+        let asset = await this.processingService.generateAssetInput(assetInfo, {author});
         return this.assetFormatter.format(asset.data);
     }
 
-    async analyzeUrl(url: string) : Promise<FormattedAsset> {
+    async analyzeUrl(url: string, author?: string) : Promise<FormattedAsset> {
         let assetInfo = await getFileFromUrl(url).catch(err => { throw new BadRequest(err.message)});
-        let asset = await this.processingService.generateAssetInput(assetInfo);
+        let asset = await this.processingService.generateAssetInput(assetInfo, {author});
         return this.assetFormatter.format(asset.data);
     }
 
-    async saveAnalyzedUrl(url: string, cache: boolean) : Promise<FormattedAsset>{
+    async saveAnalyzedUrl(url: string, cache: boolean, author?: string) : Promise<FormattedAsset>{
         if (cache) {
             let cacheValue = await this.prisma.asset.findFirst({where: {referenceUrl: url}});
             if (cacheValue) {
@@ -117,7 +117,7 @@ export class AssetService {
         }
         let assetInfo : FileInfo = await getFileFromUrl(url).catch(err => { throw new BadRequest(err.message); });
         assetInfo.analyzed = new Date();
-        return await this.saveFileToDB(assetInfo).catch(err => { throw new BadRequest(err.message); });
+        return await this.saveFileToDB(assetInfo, author).catch(err => { throw new BadRequest(err.message); });
     }
 
     //TODO: upadatedAsset type any can cause errors

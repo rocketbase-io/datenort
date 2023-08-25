@@ -20,6 +20,7 @@ export class AssetFormatterService {
         };
 
         //Add conditional keys (i.e. image data)
+        if(rawAsset.author) formattedAsset.author = rawAsset.author;
         if(rawAsset.analyzed) formattedAsset.analyzed = rawAsset.analyzed;
         // todo: formattedAsset.download means in case of s3 file the bucket signed download url / otherwise referenceURL when not stored?
         if(rawAsset.urlPath) formattedAsset.urlPath = rawAsset.urlPath;

@@ -34,7 +34,7 @@ export class AssetProcessingService {
         return sizeOf(file.buffer);
     }
 
-    public async generateAssetInput(file: FileInfo, options?: {bucket?: string | undefined, uuid: string | undefined, filePath?: string | undefined}) : Promise<any> {
+    public async generateAssetInput(file: FileInfo, options?: {bucket?: string | undefined, uuid?: string | undefined, filePath?: string | undefined, author?: string | undefined}) : Promise<any> {
         //Image processing for relevant data
         const isImage = file.mimetype.split('/')[0] == "image";
 
@@ -45,7 +45,6 @@ export class AssetProcessingService {
                 originalFilename: file.originalname,
                 fileSize: file.size,
                 created: new Date(),
-
             }
         };
 
@@ -53,9 +52,8 @@ export class AssetProcessingService {
         if(file.analyzed) asset.data['analyzed'] = file.analyzed;
         if(options) {
             asset.data['id'] = options.uuid;
-            if(options.bucket) {
-                asset.data['bucket'] = options.bucket;
-            }
+            if(options.bucket) asset.data['bucket'] = options.bucket;
+            if(options.author) asset.data['author'] = options.author;
             if(options.filePath) asset.data['urlPath'] = options.filePath;
         }
 

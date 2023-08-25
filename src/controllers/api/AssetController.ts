@@ -2,6 +2,7 @@ import {Controller, Inject} from "@tsed/di";
 import {Delete, Get, Post, Put, Returns, Summary} from "@tsed/schema";
 import {
     BodyParams,
+    Context,
     MultipartFile,
     PathParams,
     PlatformMulterFile,
@@ -40,8 +41,6 @@ export class AssetController {
         let asset = await this.assetFindService.findById(id)
         return this.imageProxyService.resizeAsset(asset);
     }
-
-
 
     @Get("/resize/:id/:size")
     @UseBefore(JWTAuthorization)
@@ -121,10 +120,12 @@ export class AssetController {
     @Returns(400, Exception).Description("On Error")
     @UseBefore(JWTAuthorization)
     async uploadAsset(@MultipartFile("file") files: PlatformMulterFile[],
-                      @QueryParams("bucket") bucket: string
+                      @QueryParams("bucket") bucket: string,
+                      @Context() ctx: Context
     ) : Promise<FormattedAsset | FormattedAsset[]> {
         let assets : FormattedAsset[] = [];
-        for(let file of files) assets.push(await this.assetService.uploadAsset(file, bucket));
+        let author = ctx.get("tokenPayload").sub; // subject (sub) -> UUID of the user
+        for(let file of files) assets.push(await this.assetService.uploadAsset(file, bucket, author));
         return files.length == 1 ? assets[0] : assets;
     }
 
@@ -133,39 +134,44 @@ export class AssetController {
     @Returns(200, FormattedAsset).Description("Returns an formatted version of an array of assets")
     @UseBefore(JWTAuthorization)
     async uploadDownloadedAssets(@BodyParams("urls") urls: string[],
-                                 @PathParams("bucket") bucket: string
+                                 @PathParams("bucket") bucket: string,
+                                 @Context() ctx: Context
     ) : Promise<FormattedAsset[]> {
-        return await this.assetService.batchUpload(urls, bucket);
+        let author = ctx.get("tokenPayload").sub; // subject (sub) -> UUID of the user
+        return await this.assetService.batchUpload(urls, bucket, author);
     }
 
     @Post("/analyze-file")
     @Summary("No saving or upload. Just analyzing file")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     @UseBefore(JWTAuthorization)
-    analyzeAssetByFile(@MultipartFile("file") file : PlatformMulterFile) : Promise<FormattedAsset> {
+    analyzeAssetByFile(@Context() ctx: Context, @MultipartFile("file") file : PlatformMulterFile) : Promise<FormattedAsset> {
+        let author = ctx.get("tokenPayload").sub; // subject (sub) -> UUID of the user
         //no access needed
-        return this.assetService.analyzeFile(file);
+        return this.assetService.analyzeFile(file, author);
     }
     @Post("/analyze-url")
     @Summary("No saving or upload. Just analyzing downloaded url")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     @UseBefore(JWTAuthorization)
-    analyzeAssetByUrl(@BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+    analyzeAssetByUrl(@Context() ctx: Context, @BodyParams() body : {url: string}) : Promise<FormattedAsset> {
+        let author = ctx.get("tokenPayload").sub; // subject (sub) -> UUID of the user
         //no access needed
         if (!body.url) {
             throw new BadRequest("url is required");
         }
-        return this.assetService.analyzeUrl(body.url);
+        return this.assetService.analyzeUrl(body.url, author);
     }
     @Post("/analyze-url/save")
     @Summary("Save a file to the database + adding analyzed time")
     @Returns(200, FormattedAsset).Description("Return a formatted version of the asset")
     @UseBefore(JWTAuthorization)
-    saveAnalyzedUrl(@BodyParams() body : {url: string}, @QueryParams("cache") cache: boolean = true) : Promise<FormattedAsset> {
+    saveAnalyzedUrl(@Context() ctx: Context, @BodyParams() body : {url: string}, @QueryParams("cache") cache: boolean = true) : Promise<FormattedAsset> {
+        let author = ctx.get("tokenPayload").sub; // subject (sub) -> UUID of the user
         //Doesnt need bucket... all access?
         if (!body.url) {
             throw new BadRequest("url is required");
         }
-        return this.assetService.saveAnalyzedUrl(body.url, cache);
+        return this.assetService.saveAnalyzedUrl(body.url, cache, author);
     }
 }
